@@ -1,0 +1,23 @@
+{
+  "key": "nps_INDU_howesprairierx",
+  "epsg": 32616,
+  "point_xy": [
+    493498.02437374595,
+    4610768.114782774
+  ],
+  "s2_looks": 13,
+  "landsat_looks": 3,
+  "first_clear_after_days_merged": 3,
+  "first_clear_after_days_s2": 3,
+  "strata": "tessera",
+  "candidate_units": 896,
+  "mapped_ha": {
+    "std": 407.84,
+    "v1": 63.92,
+    "v2": 79.32,
+    "v1_snap": 60.0,
+    "v2_snap": 77.08
+  },
+  "control_line_features": 2019,
+  "control_line_source": "s3://overturemaps-us-west-2/release/2026-09-23.1"
+}

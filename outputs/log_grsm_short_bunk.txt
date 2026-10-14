@@ -1,0 +1,40 @@
+/home/rswaty/Documents/rx_fire_pilot/.venv/lib/python3.12/site-packages/rasterio/warp.py:390: NotGeoreferencedWarning: Dataset has no geotransform, gcps, or rpcs. The identity matrix will be returned.
+  dest = _reproject(
+{
+ "key": "grsm_short_bunk",
+ "epsg": 32617,
+ "s2_scenes_pre": 9,
+ "s2_scenes_post": 9,
+ "first_clear_after_days": 5,
+ "last_clear_before_days": 2,
+ "s1_scenes_pre": 3,
+ "s1_scenes_post": 3,
+ "viirs_hits_in_window": 0,
+ "dnbr_background_median": -0.08704212446648267,
+ "dnbr_background_mad": 0.0931250477220599,
+ "qa_rule_C": {
+  "detected": true,
+  "mapped_ha": 29.52,
+  "reported_ha": 315.4529451043079,
+  "area_ratio_mapped_to_reported": 0.09357972546504169,
+  "median_dnbr_in_polygon": 0.15707540897005973,
+  "viirs_confirmed": false,
+  "s1_vh_change_in_minus_out_db": -0.1363356113433838,
+  "embedding_change_z_in_polygon": 0.5001609325408936,
+  "confidence": "medium",
+  "flags": [
+   "mapped area < 1/3 of reported (patchy/under-canopy burn or partial detection)",
+   "no VIIRS active-fire detection (common for small/cool Rx burns)"
+  ]
+ },
+ "point_xy": [
+  309242.6605233443,
+  3947978.2604259574
+ ],
+ "window_utm": [
+  304782.6605233443,
+  3943518.2604259574,
+  313702.6605233443,
+  3952438.2604259574
+ ]
+}

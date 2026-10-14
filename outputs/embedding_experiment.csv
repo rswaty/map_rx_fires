@@ -1,0 +1,4 @@
+fire,year,train_pos_px,test_pos_px,auc_target_vs_nearby_unburned,pct_target_px_prob_gt_0.5,pct_nearby_unburned_px_prob_gt_0.5,note
+konza_k1b,2019,17906,4502,0.932,90.2,21.5,
+grsm_short_bunk,2019,0,7884,,,,too few other recorded burns in the window to train on
+seki_big_stump,2025,51,1200,,,,too few other recorded burns in the window to train on

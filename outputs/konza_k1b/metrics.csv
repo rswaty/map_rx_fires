@@ -1,0 +1,5 @@
+fire,rule,mapped_ha,detected,pct_unit_mapped,false_outside_ha,other_burns_ha,precision_vs_target,iou
+konza_k1b,A_wall_to_wall,741.1,True,99.5,34.6,525.8,24.2,0.241
+konza_k1b,B_point_guided,683.1,True,99.8,2.9,498.3,26.3,0.263
+konza_k1b,C_point_date,549.6,True,99.7,1.2,367.0,32.7,0.327
+konza_k1b,D_point_date_embed,549.6,True,99.7,1.2,367.0,32.7,0.326

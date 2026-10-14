@@ -1,0 +1,10 @@
+/home/rswaty/Documents/rx_fire_pilot/.venv/lib/python3.12/site-packages/rasterio/warp.py:390: NotGeoreferencedWarning: Dataset has no geotransform, gcps, or rpcs. The identity matrix will be returned.
+  dest = _reproject(
+/home/rswaty/Documents/rx_fire_pilot/.venv/lib/python3.12/site-packages/rasterio/warp.py:390: NotGeoreferencedWarning: Dataset has no geotransform, gcps, or rpcs. The identity matrix will be returned.
+  dest = _reproject(
+nps_EVER_blockj {"std": 518.32, "v1": 189.56, "v2": 302.48, "v1_snap": 0.0, "v2_snap": 0.0} 173 0 17 5
+nps_INDU_howesprairierx {"std": 407.84, "v1": 63.92, "v2": 79.32, "v1_snap": 60.0, "v2_snap": 77.08} 1757 700 13 3
+nps_OZAR_devilswell {"std": 233.12, "v1": 8.44, "v2": 71.72, "v1_snap": 8.44, "v2_snap": 71.72} None 9 8 1
+nps_HOBE_nwcomplex {"std": 24.68, "v1": 1.92, "v2": 38.36, "v1_snap": 1.92, "v2_snap": 38.36} None 2 6 4
+nps_REDW_coppercreekrx {"std": 46.12, "v1": 30.88, "v2": 44.0, "v1_snap": 29.6, "v2_snap": 41.16} 77 90 13 4
+nps_LARO_marcusrx {"std": 75.88, "v1": 10.12, "v2": 13.4, "v1_snap": 10.12, "v2_snap": 13.4} None 1 13 5

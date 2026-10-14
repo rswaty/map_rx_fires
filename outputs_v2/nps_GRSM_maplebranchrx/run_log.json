@@ -1,0 +1,23 @@
+{
+  "key": "nps_GRSM_maplebranchrx",
+  "epsg": 32617,
+  "point_xy": [
+    246320.28383369124,
+    3943069.2358323736
+  ],
+  "s2_looks": 12,
+  "landsat_looks": 3,
+  "first_clear_after_days_merged": 8,
+  "first_clear_after_days_s2": 8,
+  "strata": "tessera",
+  "candidate_units": 171,
+  "mapped_ha": {
+    "std": 764.24,
+    "v1": 65.48,
+    "v2": 125.0,
+    "v1_snap": 99.56,
+    "v2_snap": 179.8
+  },
+  "control_line_features": 245,
+  "control_line_source": "s3://overturemaps-us-west-2/release/2026-09-23.1"
+}

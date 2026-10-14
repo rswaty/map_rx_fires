@@ -1,0 +1,40 @@
+/home/rswaty/Documents/rx_fire_pilot/.venv/lib/python3.12/site-packages/rasterio/warp.py:390: NotGeoreferencedWarning: Dataset has no geotransform, gcps, or rpcs. The identity matrix will be returned.
+  dest = _reproject(
+{
+ "key": "seki_big_stump",
+ "epsg": 32611,
+ "s2_scenes_pre": 12,
+ "s2_scenes_post": 10,
+ "first_clear_after_days": 1,
+ "last_clear_before_days": 4,
+ "s1_scenes_pre": 14,
+ "s1_scenes_post": 10,
+ "viirs_hits_in_window": 1,
+ "viirs_min_dist_to_point_m": 446.712255106041,
+ "dnbr_background_median": -0.0065965252278654685,
+ "dnbr_background_mad": 0.022478344279248885,
+ "qa_rule_C": {
+  "detected": true,
+  "mapped_ha": 15.8,
+  "reported_ha": 48.15766576961211,
+  "area_ratio_mapped_to_reported": 0.3280889915966387,
+  "median_dnbr_in_polygon": 0.10437115990349016,
+  "viirs_confirmed": true,
+  "s1_vh_change_in_minus_out_db": 0.005981922149658203,
+  "embedding_change_z_in_polygon": -0.15589401125907898,
+  "confidence": "medium",
+  "flags": [
+   "mapped area < 1/3 of reported (patchy/under-canopy burn or partial detection)"
+  ]
+ },
+ "point_xy": [
+  325229.43674549786,
+  4065888.616818842
+ ],
+ "window_utm": [
+  322729.43674549786,
+  4063388.616818842,
+  327729.43674549786,
+  4068388.616818842
+ ]
+}

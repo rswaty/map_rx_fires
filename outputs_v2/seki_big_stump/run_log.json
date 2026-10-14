@@ -1,0 +1,23 @@
+{
+  "key": "seki_big_stump",
+  "epsg": 32611,
+  "point_xy": [
+    325229.43674549786,
+    4065888.616818842
+  ],
+  "s2_looks": 23,
+  "landsat_looks": 11,
+  "first_clear_after_days_merged": 1,
+  "first_clear_after_days_s2": 1,
+  "strata": "tessera",
+  "candidate_units": 245,
+  "mapped_ha": {
+    "std": 14.88,
+    "v1": 15.8,
+    "v2": 15.52,
+    "v1_snap": 14.8,
+    "v2_snap": 14.4
+  },
+  "control_line_features": 271,
+  "control_line_source": "s3://overturemaps-us-west-2/release/2026-09-23.1"
+}

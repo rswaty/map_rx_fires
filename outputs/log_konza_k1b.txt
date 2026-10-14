@@ -1,0 +1,40 @@
+/home/rswaty/Documents/rx_fire_pilot/.venv/lib/python3.12/site-packages/rasterio/warp.py:390: NotGeoreferencedWarning: Dataset has no geotransform, gcps, or rpcs. The identity matrix will be returned.
+  dest = _reproject(
+{
+ "key": "konza_k1b",
+ "epsg": 32614,
+ "s2_scenes_pre": 4,
+ "s2_scenes_post": 7,
+ "first_clear_after_days": 4,
+ "last_clear_before_days": 1,
+ "s1_scenes_pre": 2,
+ "s1_scenes_post": 4,
+ "viirs_hits_in_window": 4,
+ "viirs_min_dist_to_point_m": 283.985853102006,
+ "dnbr_background_median": 0.01847046998564838,
+ "dnbr_background_mad": 0.02978178545918138,
+ "qa_rule_C": {
+  "detected": true,
+  "mapped_ha": 549.56,
+  "reported_ha": 180.04492017563382,
+  "area_ratio_mapped_to_reported": 3.052349377388177,
+  "median_dnbr_in_polygon": 0.23818098072594984,
+  "viirs_confirmed": true,
+  "s1_vh_change_in_minus_out_db": -0.7901515960693359,
+  "embedding_change_z_in_polygon": -0.5038477182388306,
+  "confidence": "medium",
+  "flags": [
+   "mapped area > 2x reported (possible commission or adjacent burns)"
+  ]
+ },
+ "point_xy": [
+  710887.4381789529,
+  4329467.7363909455
+ ],
+ "window_utm": [
+  707527.4381789529,
+  4326107.7363909455,
+  714247.4381789529,
+  4332827.7363909455
+ ]
+}

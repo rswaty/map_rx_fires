@@ -1,0 +1,6 @@
+variant,fires,detected,solid_detection_ge10pct,median_pct_unit,median_iou,total_false_outside_ha,fires_with_false_gt_5ha,total_on_other_burns_ha
+std,22,18,16,27.8,0.1135,1897.3,14,833.1999999999999
+v1,22,20,12,18.25,0.1825,16.0,1,369.7
+v1_snap,22,15,12,18.15,0.181,43.2,3,410.9
+v2,22,22,17,32.75,0.304,195.7,5,408.70000000000005
+v2_snap,22,21,17,31.25,0.289,508.6,6,448.5

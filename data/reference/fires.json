@@ -1,0 +1,38 @@
+{
+  "konza_k1b": {
+    "key": "konza_k1b",
+    "label": "Konza Prairie K1B (KS) - tallgrass prairie",
+    "source": "Konza Prairie LTER GIS097 (watersheds burned 2019)",
+    "ecosystem": "grassland",
+    "lat": 39.08885872059097,
+    "lon": -96.56167774678346,
+    "point_offset_m": 288,
+    "start": "2019-03-22",
+    "end": "2019-03-22",
+    "reported_acres": 444.9
+  },
+  "grsm_short_bunk": {
+    "key": "grsm_short_bunk",
+    "label": "Great Smoky Mtns - Cataloochee Short Bunk Rx (NC) - oak/pine forest underburn",
+    "source": "NPS National Wildland Fire Perimeters (MAPMETHOD=Differential GPS)",
+    "ecosystem": "eastern hardwood-pine forest",
+    "lat": 35.65724333634944,
+    "lon": -83.10728956889372,
+    "point_offset_m": 339,
+    "start": "2019-04-17",
+    "end": "2019-04-17",
+    "reported_acres": 779.5
+  },
+  "seki_big_stump": {
+    "key": "seki_big_stump",
+    "label": "Kings Canyon NP - Big Stump East Rx (CA) - mixed conifer / sequoia underburn",
+    "source": "CAL FIRE FRAP rxburn (NPS record)",
+    "ecosystem": "western mixed-conifer forest",
+    "lat": 36.72262944954635,
+    "lon": -118.95704687898713,
+    "point_offset_m": 395,
+    "start": "2025-06-23",
+    "end": "2025-06-28",
+    "reported_acres": 119.0
+  }
+}

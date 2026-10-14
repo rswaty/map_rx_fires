@@ -1,0 +1,19 @@
+{
+  "fire": "seki_big_stump",
+  "label": "Kings Canyon NP - Big Stump East Rx (CA) - mixed conifer / sequoia underburn",
+  "evidence_auc": {
+    "dNBR": 0.8669322945974581,
+    "break_mag": 0.7379396250614675,
+    "tessera_dist": 0.43838352749430953,
+    "s1_vh_lr": 0.49713637907522595,
+    "s1_vv_lr": 0.5345431260424113
+  },
+  "timing": {
+    "pct_unit_pixels_date_matched": 53.3,
+    "pct_unit_pixels_strong_signal": 66.4,
+    "pct_strong_unit_pixels_date_matched": 70.0,
+    "pct_strong_background_pixels_date_matched": 45.1,
+    "median_break_rel_days_strong_unit": -1.5
+  },
+  "other_burns_in_window": []
+}

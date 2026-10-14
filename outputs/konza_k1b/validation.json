@@ -1,0 +1,181 @@
+{
+  "fire": "konza_k1b",
+  "label": "Konza Prairie K1B (KS) - tallgrass prairie",
+  "evidence_auc": {
+    "dNBR": 0.9958644666256213,
+    "break_mag": 0.9342608961717933,
+    "tessera_dist": 0.14360037603441997,
+    "s1_vh_lr": 0.22508667448931663,
+    "s1_vv_lr": 0.11103590832807989
+  },
+  "timing": {
+    "pct_unit_pixels_date_matched": 98.7,
+    "pct_unit_pixels_strong_signal": 99.2,
+    "pct_strong_unit_pixels_date_matched": 99.4,
+    "pct_strong_background_pixels_date_matched": 47.0,
+    "median_break_rel_days_strong_unit": 1.5
+  },
+  "other_burns_in_window": [
+    {
+      "days_from_target": 14,
+      "pixels": 890,
+      "pct_strong": 0.0,
+      "pct_flagged_as_target_date": 0.0,
+      "median_break_rel_days": NaN
+    },
+    {
+      "days_from_target": 24,
+      "pixels": 889,
+      "pct_strong": 0.3,
+      "pct_flagged_as_target_date": 0.0,
+      "median_break_rel_days": -8.5
+    },
+    {
+      "days_from_target": 24,
+      "pixels": 573,
+      "pct_strong": 0.0,
+      "pct_flagged_as_target_date": 0.0,
+      "median_break_rel_days": NaN
+    },
+    {
+      "days_from_target": 11,
+      "pixels": 412,
+      "pct_strong": 99.3,
+      "pct_flagged_as_target_date": 0.0,
+      "median_break_rel_days": 9.0
+    },
+    {
+      "days_from_target": -49,
+      "pixels": 289,
+      "pct_strong": 4.2,
+      "pct_flagged_as_target_date": 0.0,
+      "median_break_rel_days": -31.0
+    },
+    {
+      "days_from_target": 24,
+      "pixels": 1212,
+      "pct_strong": 0.4,
+      "pct_flagged_as_target_date": 0.2,
+      "median_break_rel_days": -8.5
+    },
+    {
+      "days_from_target": 24,
+      "pixels": 988,
+      "pct_strong": 0.4,
+      "pct_flagged_as_target_date": 0.2,
+      "median_break_rel_days": -3.5
+    },
+    {
+      "days_from_target": -49,
+      "pixels": 305,
+      "pct_strong": 3.3,
+      "pct_flagged_as_target_date": 0.3,
+      "median_break_rel_days": -31.0
+    },
+    {
+      "days_from_target": 24,
+      "pixels": 1042,
+      "pct_strong": 1.1,
+      "pct_flagged_as_target_date": 0.7,
+      "median_break_rel_days": 1.5
+    },
+    {
+      "days_from_target": -4,
+      "pixels": 2326,
+      "pct_strong": 79.8,
+      "pct_flagged_as_target_date": 70.2,
+      "median_break_rel_days": -3.5
+    },
+    {
+      "days_from_target": -4,
+      "pixels": 5662,
+      "pct_strong": 82.6,
+      "pct_flagged_as_target_date": 64.4,
+      "median_break_rel_days": -3.5
+    },
+    {
+      "days_from_target": -2,
+      "pixels": 1909,
+      "pct_strong": 31.1,
+      "pct_flagged_as_target_date": 27.0,
+      "median_break_rel_days": -3.5
+    },
+    {
+      "days_from_target": -2,
+      "pixels": 2837,
+      "pct_strong": 95.3,
+      "pct_flagged_as_target_date": 93.1,
+      "median_break_rel_days": -3.5
+    },
+    {
+      "days_from_target": 0,
+      "pixels": 1414,
+      "pct_strong": 97.4,
+      "pct_flagged_as_target_date": 88.7,
+      "median_break_rel_days": 1.5
+    },
+    {
+      "days_from_target": 11,
+      "pixels": 3022,
+      "pct_strong": 30.2,
+      "pct_flagged_as_target_date": 0.8,
+      "median_break_rel_days": 9.0
+    },
+    {
+      "days_from_target": 11,
+      "pixels": 2967,
+      "pct_strong": 1.1,
+      "pct_flagged_as_target_date": 0.0,
+      "median_break_rel_days": -2.25
+    },
+    {
+      "days_from_target": -4,
+      "pixels": 1231,
+      "pct_strong": 84.2,
+      "pct_flagged_as_target_date": 49.6,
+      "median_break_rel_days": -3.5
+    },
+    {
+      "days_from_target": 24,
+      "pixels": 832,
+      "pct_strong": 0.8,
+      "pct_flagged_as_target_date": 0.0,
+      "median_break_rel_days": -8.5
+    },
+    {
+      "days_from_target": 11,
+      "pixels": 1498,
+      "pct_strong": 1.9,
+      "pct_flagged_as_target_date": 0.1,
+      "median_break_rel_days": -6.0
+    },
+    {
+      "days_from_target": 0,
+      "pixels": 843,
+      "pct_strong": 53.7,
+      "pct_flagged_as_target_date": 35.7,
+      "median_break_rel_days": 1.5
+    },
+    {
+      "days_from_target": -2,
+      "pixels": 876,
+      "pct_strong": 63.2,
+      "pct_flagged_as_target_date": 57.4,
+      "median_break_rel_days": -3.5
+    },
+    {
+      "days_from_target": -2,
+      "pixels": 489,
+      "pct_strong": 70.1,
+      "pct_flagged_as_target_date": 60.3,
+      "median_break_rel_days": -3.5
+    },
+    {
+      "days_from_target": 10,
+      "pixels": 16,
+      "pct_strong": 6.2,
+      "pct_flagged_as_target_date": 0.0,
+      "median_break_rel_days": 11.5
+    }
+  ]
+}

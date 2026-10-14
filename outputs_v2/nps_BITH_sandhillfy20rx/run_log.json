@@ -1,0 +1,23 @@
+{
+  "key": "nps_BITH_sandhillfy20rx",
+  "epsg": 32615,
+  "point_xy": [
+    371966.82030185475,
+    3372574.9830321963
+  ],
+  "s2_looks": 13,
+  "landsat_looks": 3,
+  "first_clear_after_days_merged": 11,
+  "first_clear_after_days_s2": 11,
+  "strata": "tessera",
+  "candidate_units": 77,
+  "mapped_ha": {
+    "std": 250.72,
+    "v1": 16.28,
+    "v2": 4.04,
+    "v1_snap": 15.92,
+    "v2_snap": 4.04
+  },
+  "control_line_features": 97,
+  "control_line_source": "s3://overturemaps-us-west-2/release/2026-09-23.1"
+}

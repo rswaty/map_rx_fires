@@ -1,0 +1,23 @@
+{
+  "key": "nps_BISO_baldknob",
+  "epsg": 32616,
+  "point_xy": [
+    718814.9515653737,
+    4056590.1610911214
+  ],
+  "s2_looks": 7,
+  "landsat_looks": 3,
+  "first_clear_after_days_merged": 4,
+  "first_clear_after_days_s2": 13,
+  "strata": "tessera",
+  "candidate_units": 445,
+  "mapped_ha": {
+    "std": 220.32,
+    "v1": 101.44,
+    "v2": 162.52,
+    "v1_snap": 101.72,
+    "v2_snap": 161.96
+  },
+  "control_line_features": 315,
+  "control_line_source": "s3://overturemaps-us-west-2/release/2026-09-23.1"
+}

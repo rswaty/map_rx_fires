@@ -1,0 +1,23 @@
+{
+  "key": "grsm_short_bunk",
+  "epsg": 32617,
+  "point_xy": [
+    309242.6605233443,
+    3947978.2604259574
+  ],
+  "s2_looks": 18,
+  "landsat_looks": 5,
+  "first_clear_after_days_merged": 1,
+  "first_clear_after_days_s2": 5,
+  "strata": "tessera",
+  "candidate_units": 257,
+  "mapped_ha": {
+    "std": 35.28,
+    "v1": 29.52,
+    "v2": 71.12,
+    "v1_snap": 29.52,
+    "v2_snap": 70.8
+  },
+  "control_line_features": 313,
+  "control_line_source": "s3://overturemaps-us-west-2/release/2026-09-23.1"
+}

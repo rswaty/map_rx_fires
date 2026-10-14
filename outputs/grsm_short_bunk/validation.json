@@ -1,0 +1,27 @@
+{
+  "fire": "grsm_short_bunk",
+  "label": "Great Smoky Mtns - Cataloochee Short Bunk Rx (NC) - oak/pine forest underburn",
+  "evidence_auc": {
+    "dNBR": 0.4269720372432594,
+    "break_mag": 0.7353784366457612,
+    "tessera_dist": 0.5241829405654421,
+    "s1_vh_lr": 0.4244927737701073,
+    "s1_vv_lr": 0.47457849331963814
+  },
+  "timing": {
+    "pct_unit_pixels_date_matched": 11.6,
+    "pct_unit_pixels_strong_signal": 17.1,
+    "pct_strong_unit_pixels_date_matched": 65.3,
+    "pct_strong_background_pixels_date_matched": 47.2,
+    "median_break_rel_days_strong_unit": 1.5
+  },
+  "other_burns_in_window": [
+    {
+      "days_from_target": -13,
+      "pixels": 2859,
+      "pct_strong": 0.2,
+      "pct_flagged_as_target_date": 0.0,
+      "median_break_rel_days": -14.5
+    }
+  ]
+}

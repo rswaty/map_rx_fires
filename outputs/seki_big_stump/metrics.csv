@@ -1,0 +1,5 @@
+fire,rule,mapped_ha,detected,pct_unit_mapped,false_outside_ha,other_burns_ha,precision_vs_target,iou
+seki_big_stump,A_wall_to_wall,14.9,True,10.2,9.7,0.0,33.1,0.085
+seki_big_stump,B_point_guided,24.0,True,47.2,0.2,0.0,94.5,0.46
+seki_big_stump,C_point_date,15.8,True,31.2,0.1,0.0,94.9,0.307
+seki_big_stump,D_point_date_embed,15.8,True,31.2,0.1,0.0,94.9,0.307

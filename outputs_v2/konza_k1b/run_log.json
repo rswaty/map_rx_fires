@@ -1,0 +1,23 @@
+{
+  "key": "konza_k1b",
+  "epsg": 32614,
+  "point_xy": [
+    710887.4381789529,
+    4329467.7363909455
+  ],
+  "s2_looks": 11,
+  "landsat_looks": 3,
+  "first_clear_after_days_merged": 4,
+  "first_clear_after_days_s2": 4,
+  "strata": "tessera",
+  "candidate_units": 203,
+  "mapped_ha": {
+    "std": 741.08,
+    "v1": 549.56,
+    "v2": 571.68,
+    "v1_snap": 583.0,
+    "v2_snap": 603.96
+  },
+  "control_line_features": 178,
+  "control_line_source": "s3://overturemaps-us-west-2/release/2026-09-23.1"
+}

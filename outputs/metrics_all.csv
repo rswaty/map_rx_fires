@@ -1,0 +1,13 @@
+fire,rule,mapped_ha,detected,pct_unit_mapped,false_outside_ha,other_burns_ha,precision_vs_target,iou
+konza_k1b,A_wall_to_wall,741.1,True,99.5,34.6,525.8,24.2,0.241
+konza_k1b,B_point_guided,683.1,True,99.8,2.9,498.3,26.3,0.263
+konza_k1b,C_point_date,549.6,True,99.7,1.2,367.0,32.7,0.327
+konza_k1b,D_point_date_embed,549.6,True,99.7,1.2,367.0,32.7,0.326
+grsm_short_bunk,A_wall_to_wall,35.3,True,11.2,0.0,0.0,100.0,0.112
+grsm_short_bunk,B_point_guided,35.6,True,11.3,0.0,0.0,100.0,0.113
+grsm_short_bunk,C_point_date,29.5,True,9.4,0.0,0.0,100.0,0.094
+grsm_short_bunk,D_point_date_embed,29.9,True,9.5,0.0,0.0,100.0,0.095
+seki_big_stump,A_wall_to_wall,14.9,True,10.2,9.7,0.0,33.1,0.085
+seki_big_stump,B_point_guided,24.0,True,47.2,0.2,0.0,94.5,0.46
+seki_big_stump,C_point_date,15.8,True,31.2,0.1,0.0,94.9,0.307
+seki_big_stump,D_point_date_embed,15.8,True,31.2,0.1,0.0,94.9,0.307
