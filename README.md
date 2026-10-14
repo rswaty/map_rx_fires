@@ -6,6 +6,29 @@ output:
 ---
 # Mapping prescribed fires from a point and a date: a pilot (3 fires, then 22)
 
+## Table of contents
+
+- [Abstract](#abstract)
+  - [Questions and answers](#questions-and-answers)
+  - [Lessons learned](#lessons-learned)
+- [Introduction](#introduction)
+- [Round 1: three test fires](#round-1-three-test-fires)
+  - [Round 1 methods (plain English)](#round-1-methods-plain-english)
+  - [Round 1 results](#round-1-results)
+- [Round 2: 22 fires, fully automatic, with and without snapping](#round-2-22-fires-fully-automatic-with-and-without-snapping)
+  - [How the 22 fires were chosen](#how-the-22-fires-were-chosen-automatically)
+  - [What was added in round 2](#what-was-added-in-round-2)
+  - [The five versions compared](#the-five-versions-compared)
+  - [Round 2 results](#round-2-results)
+  - [Example round-2 figures](#example-round-2-figures)
+  - [A replicability lesson from round 2](#a-replicability-lesson-from-round-2)
+- [Caveats](#caveats)
+- [Is this replicable for hundreds of points?](#is-this-replicable-for-hundreds-of-points)
+- [Suggested next steps](#suggested-next-steps)
+- [How to run](#how-to-run)
+- [Files](#files)
+- [Appendix: round 2 explained with a grocery store analogy](#appendix-round-2-explained-with-a-grocery-store-analogy)
+
 ## Abstract
 
 Most prescribed-fire records, including TNC's, are a point, a date, and a reported size, with
@@ -123,7 +146,7 @@ The work was done in two rounds:
 This is still a pilot. It shows what works and what doesn't, but 22 fires are not enough to
 estimate accuracy for a whole program.
 
-## The three test fires
+## Round 1: three test fires
 
 The three were chosen to span easy to hard, using the most reliable public perimeters
 that could be found.
@@ -136,7 +159,7 @@ that could be found.
 | Cataloochee "Short Bunk" Rx, Great Smoky Mtns (NC) | Eastern oak/pine forest, steep terrain | Apr 17, 2019 | 780 ac | National Park Service perimeter, mapped with **differential GPS**. |
 | Big Stump East Rx, Kings Canyon NP (CA) | Mixed conifer / giant sequoia, closed canopy | Jun 23–28, 2025 | 119 ac | CAL FIRE prescribed-burn layer (NPS record). Mapped acres match reported acres. |
 
-## Methods (plain English)
+## Round 1 methods (plain English)
 
 ### What the method is given
 
@@ -201,7 +224,7 @@ the scores focus on what can be trusted:
   background? (AUC: 0.5 = no better than chance, 1.0 = perfect. Values well below 0.5 mean
   a strong signal in the opposite direction.)
 
-## Results
+## Round 1 results
 
 ![Summary of the four methods](outputs/summary_tradeoff.png)
 
@@ -558,3 +581,91 @@ Round 2:
 - `outputs_v2/<fire>/<fire>_panels.png`: per-fire figure
 - `outputs_v2/<fire>/polygons.geojson`: mapped polygons for each version
 - `data/cache/lines_<fire>.geojson`: control lines used for each fire
+
+## Appendix: round 2 explained with a grocery store analogy
+
+Think of each prescribed burn as a **neighborhood power outage** that hits a cluster of grocery
+stores. The job is to draw the outage area using only a short outage report and the stores'
+daily sales receipts.
+
+### What maps to what
+
+| Grocery world | Fire mapping |
+|---|---|
+| Each store in a region | Each 20 m pixel |
+| A neighborhood power outage | A prescribed burn |
+| The outage report: "near Main & 5th, June 21–24, about 350 stores' worth of area" | The record: a point, dates, and acres |
+| The outage boundary walked by utility crews with GPS | The NPS GPS-mapped perimeter |
+| Daily sales receipts from two checkout systems | Sentinel-2 and Landsat images |
+| A register that's offline that day | A cloudy image |
+| A sales drop | A drop in NBR (the burn index) |
+| Stores with backup generators | Forest burns under intact canopy, where the satellite still sees green tree crowns |
+| Streets, rivers, and ridges that divide the city into blocks | Control lines (roads, trails, streams, ridges) |
+
+### The steps
+
+1. **Pick the test cases by rule.** Take 22 past outages from the utility's records whose
+   boundaries were walked with GPS, within a size range, lasting 4 days or less. No
+   hand-picking. The analyst gets only a slightly wrong address, the dates, and the size. The
+   crews' map is locked away for grading.
+2. **Combine both checkout systems.** One system (Sentinel-2) reports every few days, the other
+   (Landsat) about weekly, and registers go offline on cloudy days, sometimes for weeks.
+   Combining them gives more readings, so you can pin down *when* sales dropped.
+3. **Don't be fooled by a labeling glitch.** One system sometimes labels outage readings as a
+   "lighting problem" (cloud shadow) when they are really the outage itself (char). That label
+   is only trusted when there's a real cause nearby (a cloud).
+4. **Remove the seasonal swing with look-alike stores.** Use last year's store profiles (the
+   embeddings) to sort stores into 30 types, such as "beach town" or "college town." For each
+   day, compare every store with the typical sales of **same-type stores in other parts of the
+   region**. "Down 7% compared with stores like it" is a real loss. "Down 10% like every
+   college-town store in June" is not.
+5. **Find when each store's sales dropped and stayed down.** A one-day dip that bounces back is
+   ignored. The store counts only if its lasting drop falls within the reported outage dates
+   (±2 days).
+6. **Stay near the reported address.** Keep only clusters of affected stores connected to the
+   area within 1 km of the reported intersection. Drop isolated specks and fill small gaps. A
+   store across town that dropped the same day is a different outage, or noise.
+7. **Optionally, snap to city blocks.** If at least 40% of a block's stores went dark, call the
+   whole block out. If fewer than 10% did, drop them as noise. Skip blocks more than 3× the
+   reported outage size.
+8. **Grade against the crews' map,** comparing five versions: the old method ("any store with a
+   sales drop anywhere"), round 1, round 2, and each of those two with block snapping.
+   - Was the outage found at all?
+   - What share of the outage area was flagged?
+   - How many stores outside it were wrongly flagged?
+   - Were flagged stores part of a *different* recorded outage (real, but the wrong event)?
+   - Results are broken out by neighborhood type (forest, mixed, open).
+
+### What happened
+
+- **All 22 outages were found.** For 17 of them, at least 10% of the area was flagged.
+- **Open areas were easy.** Every store went fully dark, so about 90% of the outage area
+  typically showed up.
+- **Areas with backup generators were hard.** In forest, the satellite still sees the green tree
+  crowns over many burned spots, so only about 25% of the area typically showed a drop. That
+  was still triple round 1, thanks to the look-alike comparison. The crews' map shows the area
+  the utility switched off, not which stores actually lost sales, so "25% flagged" does not
+  mean "75% missed."
+- **Far fewer false alarms than the old method:** 196 ha flagged outside outages, versus
+  1,897 ha for "any sales drop anywhere." Some of those flags are probably real outages nobody
+  recorded.
+- **Block snapping was a mixed bag:**
+  - It was great where outages followed block lines. In the Everglades, the canals and roads
+    match the unit almost perfectly, and snapping turned 54% flagged into 97%.
+  - It was bad where a "block" is a huge rural area with few streets. At Badlands it switched
+    off a whole sprawling block and added about 290 ha of false alarms.
+  - On average it didn't help, so the unsnapped map stays the main product.
+- **Two failure modes:**
+  - A **regional storm** that also hit the comparison stores (local drought, or unrecorded
+    burns) gets subtracted out as normal, and the real loss disappears. That may be what
+    happened at Big Thicket.
+  - **Two outages a few days apart**, with registers offline in between, can't be told apart.
+    Daily receipts, meaning Planet imagery, would fix that.
+
+### Why it could run for hundreds of outages
+
+- All the receipts, store profiles, and street maps come from free public feeds with no
+  passwords.
+- One map feed, a shared query service, got overwhelmed partway through, so it was replaced by
+  downloading the map files directly.
+- Every rule was set before looking at results, and the same rules apply everywhere.
