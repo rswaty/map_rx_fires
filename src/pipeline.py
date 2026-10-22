@@ -27,6 +27,7 @@ import odc.stac
 import pandas as pd
 import planetary_computer
 import pystac_client
+import rasterio
 import rioxarray  # noqa: F401  (registers .rio)
 import xarray as xr
 from pyproj import CRS, Transformer
@@ -74,10 +75,23 @@ def make_window(f):
 
 
 # ----------------------------------------------------------------------------- S2
+def _readable(item):
+    """Some archived scenes have files without georeferencing, which crash the whole load."""
+    try:
+        with rasterio.open(item.assets["SCL"].href) as src:
+            ok = src.crs is not None
+    except Exception:
+        ok = False
+    if not ok:
+        print("skipping unreadable scene", item.id, flush=True)
+    return ok
+
+
 def load_s2(cat, f, epsg, bb_ll, t0, t1):
     items = cat.search(collections=["sentinel-2-l2a"], bbox=bb_ll,
                        datetime=f"{t0:%Y-%m-%d}/{t1:%Y-%m-%d}",
                        query={"eo:cloud_cover": {"lt": 95}}).item_collection()
+    items = [it for it in items if _readable(it)]
     baseline = {}
     for it in items:
         d = pd.Timestamp(it.datetime).tz_localize(None).normalize()

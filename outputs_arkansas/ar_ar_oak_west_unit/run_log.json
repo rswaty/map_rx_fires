@@ -1,0 +1,23 @@
+{
+  "key": "ar_ar_oak_west_unit",
+  "epsg": 32615,
+  "point_xy": [
+    483736.84069187025,
+    3723829.232353993
+  ],
+  "s2_looks": 13,
+  "landsat_looks": 8,
+  "first_clear_after_days_merged": 1,
+  "first_clear_after_days_s2": 1,
+  "strata": "tessera",
+  "control_line_features": 15,
+  "control_line_source": "s3://overturemaps-us-west-2/release/2026-09-23.1",
+  "candidate_units": 10,
+  "mapped_ha": {
+    "std": 230.48,
+    "v1": 14.24,
+    "v2": 16.84,
+    "v1_snap": 14.08,
+    "v2_snap": 16.52
+  }
+}

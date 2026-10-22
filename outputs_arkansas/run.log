@@ -1,0 +1,10 @@
+/home/rswaty/Documents/map_rx_fires/.venv/lib/python3.12/site-packages/rasterio/warp.py:390: NotGeoreferencedWarning: Dataset has no geotransform, gcps, or rpcs. The identity matrix will be returned.
+  dest = _reproject(
+ar_ar_oak_west_unit {"std": 230.48, "v1": 14.24, "v2": 16.84, "v1_snap": 14.08, "v2_snap": 16.52} 15 10 13 8
+ar_lorance_creek_north {"std": 34.16, "v1": 23.92, "v2": 16.48, "v1_snap": 23.92, "v2_snap": 16.48} 230 101 10 5
+ar_rattlesnake_ridge_maumelle_pin {"std": 8.2, "v1": 3.8, "v2": 26.24, "v1_snap": 3.12, "v2_snap": 26.92} 209 165 14 9
+ar_prairie_ridge_preserve_north_unit {"std": 87.44, "v1": 30.28, "v2": 40.32, "v1_snap": 3.72, "v2_snap": 38.52} 378 232 12 10
+ar_felsenthal_west_dollar_junct FAILED AssertionError()
+ar_dunahoo_preserve_entire {"std": 58.2, "v1": 34.04, "v2": 22.32, "v1_snap": 33.84, "v2_snap": 22.2} 300 70 15 7
+skipping unreadable scene S2C_MSIL2A_20260407T164851_R026_T15SWS_20260407T220218
+ar_felsenthal_west_dollar_junct {"std": 322.6, "v1": 47.64, "v2": 58.96, "v1_snap": 47.2, "v2_snap": 57.64} 194 92 12 8
