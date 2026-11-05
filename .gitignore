@@ -1,0 +1,11 @@
+.venv/
+__pycache__/
+*.pyc
+# per-fire raster stacks (~400 MB); rebuilt by pipeline.py / pipeline_v2.py
+*.nc
+*.tmp.nc
+README.log
+.~lock.*#
+.Rhistory
+# source spreadsheets can contain people's names; never commit them
+data/tester_files/

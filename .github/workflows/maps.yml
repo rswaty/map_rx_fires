@@ -1,0 +1,58 @@
+name: Make burn maps
+
+# Runs when a CSV in inputs/ is added or changed. Maps are attached to the run as a zip.
+on:
+  push:
+    paths: ["inputs/*.csv"]
+  workflow_dispatch:
+    inputs:
+      csv:
+        description: "CSV to map, e.g. inputs/my_burns.csv"
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  maps:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Find the CSV(s) to map
+        run: |
+          if [ -n "${{ github.event.inputs.csv }}" ]; then
+            echo "${{ github.event.inputs.csv }}" > csvs.txt
+          else
+            git diff --name-only --diff-filter=AM HEAD~1 HEAD -- 'inputs/*.csv' > csvs.txt
+          fi
+          echo "CSVs to map:"; cat csvs.txt
+          test -s csvs.txt || { echo "No new or changed CSV in inputs/"; exit 1; }
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install
+        run: pip install -r requirements.txt
+
+      - name: Make maps (max 5 burns per CSV)
+        env:
+          FIRMS_MAP_KEY: ${{ secrets.FIRMS_MAP_KEY }}
+        run: |
+          while read -r f; do
+            name=$(basename "$f" .csv)
+            python src/run_csv.py "$f" --out "maps/$name" --max-burns 5
+            mkdir -p "zip/$name" && cp -r "maps/$name/review/." "zip/$name/"
+          done < csvs.txt
+
+      - name: Attach maps to this run
+        uses: actions/upload-artifact@v4
+        with:
+          name: burn-maps
+          path: zip/
+          retention-days: 90

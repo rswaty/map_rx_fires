@@ -1,0 +1,7 @@
+id,site,unit,lat,lon,date,acres,burn_type
+ar_ar_oak_west_unit,AR Oak NA,West unit,33.6542,-93.1754,2026-01-06,120.0,Broadcast
+ar_lorance_creek_north,Lorance Creek NA-Preserve,North,34.5851,-92.2494,2026-01-15,90.0,Broadcast
+ar_rattlesnake_ridge_maumelle_pin,Rattlesnake Ridge NA,Maumelle Pinnacles unit,34.8458,-92.5219,2026-03-20,135.0,Broadcast
+ar_prairie_ridge_preserve_north_unit,Prairie Ridge Preserve,North unit,34.1024,-93.1646,2026-05-08,130.0,Broadcast
+ar_felsenthal_west_dollar_junct,Felsenthal-West / Huttig Pine Flatwoods,Dollar Junction,33.0595,-92.1732,2026-05-14,200.0,Broadcast
+ar_dunahoo_preserve_entire,Dunahoo Preserve,Entire,34.5098,-92.4807,2026-06-29,110.0,Broadcast
