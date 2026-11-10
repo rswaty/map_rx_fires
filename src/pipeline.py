@@ -92,6 +92,9 @@ def load_s2(cat, f, epsg, bb_ll, t0, t1):
                        datetime=f"{t0:%Y-%m-%d}/{t1:%Y-%m-%d}",
                        query={"eo:cloud_cover": {"lt": 95}}).item_collection()
     items = [it for it in items if _readable(it)]
+    if not items:
+        raise RuntimeError(f"No Sentinel-2 scenes found between {t0:%Y-%m-%d} and {t1:%Y-%m-%d} "
+                           f"at ({f['lat']:.4f}, {f['lon']:.4f}); check the coordinates and burn date.")
     baseline = {}
     for it in items:
         d = pd.Timestamp(it.datetime).tz_localize(None).normalize()
@@ -120,8 +123,15 @@ def load_s2(cat, f, epsg, bb_ll, t0, t1):
     s2 = xr.Dataset(refl)
     s2["NBR"] = (s2.B8A - s2.B12) / (s2.B8A + s2.B12)
     s2["NDVI"] = (s2.B08 - s2.B04) / (s2.B08 + s2.B04)
-    valid_frac = s2.NBR.notnull().mean(("x", "y"))
-    s2 = s2.sel(time=valid_frac.values > 0.2)
+    # Snow is already masked per pixel. Do not throw the whole date away because
+    # the window is mostly snow; only drop dates that are cloud/nodata, or that
+    # have almost no clear ground left.
+    cloud_frac = scl.isin([0, 1, 8, 9, 10]).mean(("x", "y")).values
+    valid_frac = s2.NBR.notnull().mean(("x", "y")).values
+    s2 = s2.sel(time=(cloud_frac < 0.80) & (valid_frac > 0.02))
+    if s2.sizes["time"] == 0:
+        raise RuntimeError(f"All {len(items)} Sentinel-2 scenes between {t0:%Y-%m-%d} and {t1:%Y-%m-%d} "
+                           "were cloudy or snow-covered over this site.")
     return s2
 
 
@@ -129,7 +139,10 @@ def edge_composite(da, times, mask_time, n=3, from_end=False):
     """Per-pixel median of the n valid observations closest to the burn."""
     sub = da.sel(time=mask_time)
     if sub.sizes["time"] == 0:
-        return xr.full_like(da.isel(time=0), np.nan), 0
+        # isel(time=0) would keep `time` as a scalar coordinate, and that scalar later
+        # collides with a real time dimension ("dimension 'time' already exists as a scalar variable").
+        return xr.DataArray(np.full(da.shape[-2:], np.nan), dims=("y", "x"),
+                            coords={"y": da.y, "x": da.x}), 0
     arr = sub.values
     if from_end:
         arr = arr[::-1]
@@ -245,6 +258,8 @@ def tessera_change(bb_ll, year, like):
 # ----------------------------------------------------------------------------- helpers
 def robust_z(da, mask=None):
     v = da.values[np.isfinite(da.values)] if mask is None else da.values[mask & np.isfinite(da.values)]
+    if v.size == 0:
+        return xr.full_like(da, np.nan), float("nan"), float("nan")
     med = np.median(v)
     mad = 1.4826 * np.median(np.abs(v - med))
     return (da - med) / (mad if mad > 0 else 1.0), float(med), float(mad)

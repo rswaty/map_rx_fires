@@ -51,8 +51,30 @@ jobs:
           done < csvs.txt
 
       - name: Attach maps to this run
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: burn-maps
           path: zip/
           retention-days: 90
+
+      - name: Check that every burn produced maps
+        run: |
+          python - << 'PY'
+          import os, sys, pandas as pd
+          from pathlib import Path
+          summary = Path(os.environ.get("GITHUB_STEP_SUMMARY", "/dev/null"))
+          bad = []
+          for p in sorted(Path("zip").glob("*/summary.csv")):
+              df = pd.read_csv(p).fillna("")
+              cols = [c for c in ["key", "burn_date", "reported_acres", "ac_best_effort",
+                                  "best_effort_confidence", "status"] if c in df.columns]
+              head = "| " + " | ".join(cols) + " |\n| " + " | ".join(["---"] * len(cols)) + " |"
+              rows = ["| " + " | ".join(str(r[c]) for c in cols) + " |" for _, r in df.iterrows()]
+              with summary.open("a") as f:
+                  f.write(f"### {p.parent.name}\n\n" + "\n".join([head, *rows]) + "\n\n")
+              for _, r in df[df["status"] != "ok"].iterrows():
+                  bad.append(f"{p.parent.name}/{r['key']}: {r['status']}")
+          if bad:
+              sys.exit("Some burns produced no maps:\n  " + "\n  ".join(bad))
+          PY

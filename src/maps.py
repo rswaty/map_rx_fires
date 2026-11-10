@@ -598,7 +598,7 @@ def main(out=None, title=None):
     for key, f in fires.items():
         if not (OUT / key / "run_log.json").exists():
             err = OUT / key / "error.txt"
-            why = err.read_text()[:200] if err.exists() else "not run"
+            why = err.read_text().splitlines()[0][:200] if err.exists() else "not run"
             print(key, "no maps:", why)
             rows.append({"key": key, "managed_area": f.get("managed_area", ""), "burn_unit": f.get("burn_unit", ""),
                          "burn_date": f["start"], "reported_acres": f["reported_acres"], "lat": f["lat"],
@@ -767,6 +767,10 @@ def summary_pdf(df):
              "- Google Earth: open burns.kmz. GIS: burns.gpkg.\n"
              "- summary.csv has every number in this table and more.\n\n"
              "What would help most: your unit or burn perimeters, and\nnotes on where the maps are right or wrong.")
+    failed = df[df.status != "ok"]
+    if len(failed):
+        reasons = "\n".join(f"  - {r.key}: {str(r.status).removeprefix('no maps: ')[:70]}" for _, r in failed.iterrows())
+        notes = f"FAILED BURNS ({len(failed)} of {len(df)}):\n{reasons}\n\n" + notes
     fig.text(0.50, 0.88, notes, fontsize=9.5, va="top")
     with PdfPages(REV / "summary.pdf") as pdf:
         pdf.savefig(fig)

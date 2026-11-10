@@ -171,11 +171,14 @@ def main():
                 methods.run(k)
                 print(f"[{i}/{len(todo)}] {k} done in {time.time() - t:.0f} s", flush=True)
             except Exception as e:  # one bad burn should not stop the batch; reason goes in summary.csv
+                import traceback
                 (out / k).mkdir(parents=True, exist_ok=True)
-                (out / k / "error.txt").write_text(repr(e))
+                msg = str(e).strip() or repr(e)
+                (out / k / "error.txt").write_text(f"{e.__class__.__name__}: {msg}\n\n{traceback.format_exc()}")
                 for p in ("run_log.json", "methods.nc"):
                     (out / k / p).unlink(missing_ok=True)
-                print(f"[{i}/{len(todo)}] {k} FAILED: {e!r}", flush=True)
+                print(f"::error title={k} failed::{e.__class__.__name__}: {msg}", flush=True)
+                traceback.print_exc()
             if (today - pd.Timestamp(f["end"])).days < POST_DAYS:
                 print(f"    note: burn was < {POST_DAYS} days ago; rerun later with --redo {k} for more after-images")
 

@@ -57,7 +57,12 @@ def load_landsat(cat, bb_ll, geobox, t0, t1):
     out = xr.Dataset({b: (ds[s].astype("float32") * 2.75e-5 - 0.2).where(~invalid)
                       for b, s in [("B04", "red"), ("B8A", "nir08"), ("B12", "swir22")]})
     out["NBR"] = (out.B8A - out.B12) / (out.B8A + out.B12)
-    keep = out.NBR.notnull().mean(("x", "y")).values > 0.2
+    # bit 5 is snow: masked per pixel above, but it must not drop an otherwise clear date.
+    cloud_frac = (bit(0) | bit(1) | bit(2) | bit(3)).mean(axis=(1, 2))
+    valid_frac = out.NBR.notnull().mean(("x", "y")).values
+    keep = (cloud_frac < 0.80) & (valid_frac > 0.02)
+    if not np.any(keep):
+        return None
     return out.sel(time=keep)
 
 
@@ -87,7 +92,11 @@ def run(key):
     t0, t1 = start - pd.Timedelta(days=P.PRE_DAYS), end + pd.Timedelta(days=P.POST_DAYS)
 
     s2 = P.load_s2(cat, f, epsg, bb_ll, t0, t1)
-    s2 = s2.assign_coords(x=grid.x, y=grid.y) if s2.sizes["x"] == grid.sizes["x"] else s2.reindex_like(grid, method="nearest")
+    # A scalar `time` coordinate on the saved grid (left behind when a before/after
+    # composite had no images) collides with Sentinel-2's time dimension.
+    grid = grid.drop_vars([c for c in grid.coords if c not in ("y", "x", "spatial_ref")])
+    same = s2.sizes["x"] == grid.sizes["x"] and s2.sizes["y"] == grid.sizes["y"]
+    s2 = s2.assign_coords(x=grid.x, y=grid.y) if same else s2.reindex({"y": grid.y, "x": grid.x}, method="nearest")
     geobox = s2.odc.geobox
     ls = load_landsat(cat, bb_ll, geobox, t0, t1)
     transform = grid.rio.transform()

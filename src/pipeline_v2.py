@@ -78,7 +78,12 @@ def load_landsat(cat, bb_ll, geobox, t0, t1):
     nir = ds.nir08.astype("float32") * 2.75e-5 - 0.2
     sw2 = ds.swir22.astype("float32") * 2.75e-5 - 0.2
     nbr = ((nir - sw2) / (nir + sw2)).where(~invalid)
-    keep = nbr.notnull().mean(("x", "y")).values > 0.2
+    # bit 5 is snow: masked per pixel above, but it must not drop an otherwise clear date.
+    cloud_frac = (bit(0) | bit(1) | bit(2) | bit(3)).mean(axis=(1, 2))
+    valid_frac = nbr.notnull().mean(("x", "y")).values
+    keep = (cloud_frac < 0.80) & (valid_frac > 0.02)
+    if not np.any(keep):
+        return None
     return nbr.sel(time=keep)
 
 
@@ -234,7 +239,7 @@ def run(key):
 
     s2 = P.load_s2(cat, f, epsg, bb_ll, t0, t1)
     geobox = s2.odc.geobox
-    like = s2.NBR.isel(time=0)
+    like = s2.NBR.isel(time=0, drop=True)
     transform = like.rio.write_crs(epsg).rio.transform()
     tm = pd.DatetimeIndex(s2.time.values)
     ls = load_landsat(cat, bb_ll, geobox, t0, t1)
@@ -311,6 +316,7 @@ def finish(key, f, ds, log, epsg, bb_ll, transform, rules):
     for k, m in rules.items():
         ds[f"rule_{k}"] = (("y", "x"), m.astype("uint8"))
     ds = ds.rio.write_crs(epsg)
+    ds = ds.drop_vars([c for c in ds.coords if c not in ("y", "x", "spatial_ref")])
     ds.attrs = {}
     tmp = out / "layers.tmp.nc"
     ds.to_netcdf(tmp)
