@@ -47,10 +47,32 @@ RES = 20  # m; native resolution of the S2 SWIR bands
 PRE_DAYS, POST_DAYS = 60, 45
 DATE_TOL_DAYS = 2          # slack on recorded dates
 POINT_RADIUS_M = 1000      # how far the true burn may be from the recorded point
-MIN_PATCH_PX = 5           # 0.2 ha
+MIN_PATCH_PX = 5           # 0.2 ha (~0.5 ac)
 GROUP_GAP_PX = 3           # patches within 60 m are treated as one burn
-SCL_INVALID = [0, 1, 8, 9, 10, 11]  # nodata, saturated, cloud med/high, cirrus, snow
+SCL_INVALID = [0, 1, 6, 8, 9, 10, 11]  # nodata, saturated, water, cloud med/high, cirrus, snow
 SCL_SHADOW = 3
+
+
+def retry(fn, tries=4, wait=4):
+    """Retry transient Microsoft Planetary Computer / STAC network hiccups."""
+    import time
+    for attempt in range(1, tries + 1):
+        try:
+            return fn()
+        except Exception as e:
+            if attempt == tries:
+                raise RuntimeError(f"Satellite archive request failed after {tries} tries ({e.__class__.__name__}: {e}). "
+                                   "This is usually a temporary Microsoft Planetary Computer outage; rerun to try again.") from e
+            print(f"retrying after {e.__class__.__name__} (attempt {attempt}/{tries})...", flush=True)
+            time.sleep(wait * attempt)
+
+
+def open_stac():
+    return retry(lambda: pystac_client.Client.open(STAC, modifier=planetary_computer.sign_inplace))
+
+
+def stac_search(cat, **kw):
+    return retry(lambda: cat.search(**kw).item_collection())
 
 
 # ----------------------------------------------------------------------------- grid
@@ -88,9 +110,9 @@ def _readable(item):
 
 
 def load_s2(cat, f, epsg, bb_ll, t0, t1):
-    items = cat.search(collections=["sentinel-2-l2a"], bbox=bb_ll,
-                       datetime=f"{t0:%Y-%m-%d}/{t1:%Y-%m-%d}",
-                       query={"eo:cloud_cover": {"lt": 95}}).item_collection()
+    items = stac_search(cat, collections=["sentinel-2-l2a"], bbox=bb_ll,
+                        datetime=f"{t0:%Y-%m-%d}/{t1:%Y-%m-%d}",
+                        query={"eo:cloud_cover": {"lt": 95}})
     items = [it for it in items if _readable(it)]
     if not items:
         raise RuntimeError(f"No Sentinel-2 scenes found between {t0:%Y-%m-%d} and {t1:%Y-%m-%d} "
@@ -99,14 +121,15 @@ def load_s2(cat, f, epsg, bb_ll, t0, t1):
     for it in items:
         d = pd.Timestamp(it.datetime).tz_localize(None).normalize()
         baseline[d] = float(it.properties.get("s2:processing_baseline", "0") or 0)
-    ds = odc.stac.load(items, bands=["B02", "B03", "B04", "B08", "B8A", "B11", "B12", "SCL"],
-                       crs=f"EPSG:{epsg}", resolution=RES, bbox=bb_ll,
-                       groupby="solar_day", chunks={}, resampling={"SCL": "nearest", "*": "bilinear"})
-    ds = ds.compute()
+    ds = retry(lambda: odc.stac.load(items, bands=["B02", "B03", "B04", "B08", "B8A", "B11", "B12", "SCL"],
+                                     crs=f"EPSG:{epsg}", resolution=RES, bbox=bb_ll,
+                                     groupby="solar_day", chunks={},
+                                     resampling={"SCL": "nearest", "*": "bilinear"}).compute())
     ds["time"] = pd.DatetimeIndex(ds.time.values).normalize()
 
     scl = ds["SCL"]
-    invalid = scl.isin(SCL_INVALID) | (scl == 0)
+    water = np.stack([ndi.binary_dilation(w, iterations=2) for w in (scl == 6).values])
+    invalid = scl.isin(SCL_INVALID) | (scl == 0) | water
     # Sen2Cor often labels fresh char as "cloud shadow"; only trust the shadow
     # class when an actual cloud is nearby in the same scene.
     cloud = scl.isin([8, 9, 10]).values
@@ -161,6 +184,10 @@ def break_dates(nbr):
     clear look so a single cloud-shadow artefact does not register as a burn.
     Returns magnitude and the (last-clear-before, first-clear-after) date bracket.
     """
+    if nbr.time.to_index().duplicated().any():
+        # When Sentinel-2 and Landsat both observe on the same calendar day, combine
+        # them into one daily look so same-day differences cannot swallow the drop.
+        nbr = nbr.groupby("time").mean("time")
     t = nbr.time.values.astype("datetime64[D]").astype("int64").astype("float64")
     tt = xr.DataArray(np.broadcast_to(t[:, None, None], nbr.shape), dims=nbr.dims, coords=nbr.coords)
     tt = tt.where(nbr.notnull())

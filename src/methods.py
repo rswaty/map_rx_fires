@@ -37,22 +37,23 @@ def set_output(out):
 
 
 def load_landsat(cat, bb_ll, geobox, t0, t1):
-    """Landsat 8/9 L2 surface reflectance with the same cloud mask as pipeline_v2."""
-    items = cat.search(collections=["landsat-c2-l2"], bbox=bb_ll,
-                       datetime=f"{t0:%Y-%m-%d}/{t1:%Y-%m-%d}",
-                       query={"platform": {"in": ["landsat-8", "landsat-9"]},
-                              "eo:cloud_cover": {"lt": 95}}).item_collection()
+    """Landsat 8/9 L2 surface reflectance with the same cloud and water mask as pipeline_v2."""
+    items = P.stac_search(cat, collections=["landsat-c2-l2"], bbox=bb_ll,
+                          datetime=f"{t0:%Y-%m-%d}/{t1:%Y-%m-%d}",
+                          query={"platform": {"in": ["landsat-8", "landsat-9"]},
+                                 "eo:cloud_cover": {"lt": 95}})
     if len(items) == 0:
         return None
-    ds = odc.stac.load(items, bands=["red", "nir08", "swir22", "qa_pixel"], geobox=geobox,
-                       groupby="solar_day", chunks={},
-                       resampling={"qa_pixel": "nearest", "*": "bilinear"}).compute()
+    ds = P.retry(lambda: odc.stac.load(items, bands=["red", "nir08", "swir22", "qa_pixel"], geobox=geobox,
+                                       groupby="solar_day", chunks={},
+                                       resampling={"qa_pixel": "nearest", "*": "bilinear"}).compute())
     ds["time"] = pd.DatetimeIndex(ds.time.values).normalize()
     qa = ds.qa_pixel.values.astype("uint16")
     bit = lambda b: (qa >> b) & 1 == 1  # noqa: E731
     cloud = bit(1) | bit(2) | bit(3)
     near_cloud = np.stack([ndi.binary_dilation(c, iterations=17) for c in cloud])
-    invalid = bit(0) | cloud | bit(5) | (bit(4) & near_cloud)
+    water = np.stack([ndi.binary_dilation(w, iterations=2) for w in bit(7)])
+    invalid = bit(0) | cloud | bit(5) | water | (bit(4) & near_cloud)
     invalid |= (ds.nir08.values == 0) | (ds.swir22.values == 0)
     out = xr.Dataset({b: (ds[s].astype("float32") * 2.75e-5 - 0.2).where(~invalid)
                       for b, s in [("B04", "red"), ("B8A", "nir08"), ("B12", "swir22")]})
@@ -88,7 +89,7 @@ def run(key):
         grid = src[["dnbr_s2"]].load()
     start, end = pd.Timestamp(f["start"]), pd.Timestamp(f["end"])
     epsg, (px, py), _, bb_ll = P.make_window(f)
-    cat = pystac_client.Client.open(P.STAC, modifier=planetary_computer.sign_inplace)
+    cat = P.open_stac()
     t0, t1 = start - pd.Timedelta(days=P.PRE_DAYS), end + pd.Timedelta(days=P.POST_DAYS)
 
     s2 = P.load_s2(cat, f, epsg, bb_ll, t0, t1)

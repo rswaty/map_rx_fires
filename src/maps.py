@@ -16,9 +16,10 @@ All burns:
 
 Severity = green-up-corrected dNBR inside the best-effort outline, Key & Benson (2006)
 breaks. Not field-calibrated.
-Confidence rule for the best effort (fixed before results were seen):
-  low    not detected, mapped < 0.2 x reported, or first clear look > 21 days after burn
-  high   mapped 0.5-2 x reported and first clear look <= 10 days after burn
+Confidence rule for the best effort (based on imagery timing and burn signal, not on
+matching reported acres, which are only a rough estimate used to size the search window):
+  low    not detected (< 0.2 ha / 0.5 ac), no clear after-image within 21 days, or very weak signal
+  high   clear after-image within 10 days, embeddings used, and clear burn signal (median dNBR >= 0.15)
   medium otherwise
 """
 import json
@@ -139,28 +140,36 @@ def severity(ds, epsg):
 
 
 def confidence(f, log, stats):
-    ratio = stats["mapped_acres"] / f["reported_acres"]
+    """Confidence reflects imagery timing and burn signal strength — not agreement with
+    reported acres, which are approximate field estimates."""
     gap = log.get("first_clear_after_days_merged")
+    dnbr = stats.get("dnbr_median")
+    has_emb = str(log.get("strata", "")).startswith("tessera")
+    # 5 pixels at 20 m = 0.20 ha (~0.49 ac) is the minimum patch kept by clean()
+    detected = stats["mapped_acres"] >= 5 * RES * RES / AC
     flags = []
-    if stats["mapped_acres"] < 1 / AC * 1e4:
-        flags.append("not detected (< 1 ha mapped)")
-    elif ratio < 1 / 3:
-        flags.append("mapped area < 1/3 of reported")
-    elif ratio > 2:
-        flags.append("mapped area > 2x reported")
+    if not detected:
+        flags.append("not detected (< 0.5 ac mapped)")
+    elif stats["mapped_acres"] < 3.0:
+        flags.append(f"small mapped patch ({stats['mapped_acres']:.1f} ac)")
     if gap is None:
         flags.append("no clear image after the burn")
     elif gap > 14:
         flags.append(f"first clear image {gap} days after burn")
-    if not str(log.get("strata", "")).startswith("tessera"):
+    if detected and dnbr is not None and dnbr < 0.12:
+        flags.append(f"weak burn signal (median dNBR {dnbr:.2f})")
+    if not has_emb:
         flags.append("green-up correction without embeddings")
-    if stats["mapped_acres"] < 1 / AC * 1e4 or ratio < 0.2 or gap is None or gap > 21:
+    days_old = (pd.Timestamp.now().normalize() - pd.Timestamp(f["end"])).days
+    if 0 <= days_old < 45:
+        flags.append(f"burn is {days_old} days old (full post-burn window is 45 days)")
+    if not detected or gap is None or gap > 21 or (dnbr is not None and dnbr < 0.10):
         level = "low"
-    elif 0.5 <= ratio <= 2 and gap <= 10:
+    elif gap <= 10 and has_emb and stats["mapped_acres"] >= 3.0 and (dnbr is None or dnbr >= 0.15):
         level = "high"
     else:
         level = "medium"
-    return level, ratio, gap, flags
+    return level, None, gap, flags
 
 
 def viirs_archive(fires):
@@ -340,14 +349,14 @@ def header(fig, f, n, title):
     if f["end"] != f["start"]:
         d += " to " + pd.Timestamp(f["end"]).strftime("%-d %b %Y")
     parts = [f"Map {n} of 5: {title}", f"prescribed burn {d}", f.get("burn_type"),
-             f"reported {f['reported_acres']:.0f} ac"]
+             f"reported ~{f['reported_acres']:.0f} ac (approx.)"]
     fig.text(0.06, 0.955, burn_title(f), fontsize=15, fontweight="bold")
     fig.text(0.06, 0.925, "  |  ".join(p for p in parts if p), fontsize=9.5)
 
 
 def footnote(fig, extra=""):
     fig.text(0.02, 0.015,
-             "Satellite estimate from a recorded point, date and acres (free data); not field-verified. "
+             "Satellite estimate from a recorded point, date and approximate acres (free data); not field-verified. "
              "Prescribed burns under canopy often read as unburned even where surface fuels burned.\n"
              + (extra + " " if extra else "") + "Coordinates WGS84 decimal degrees.", fontsize=6.5, color="#333")
 
@@ -365,9 +374,10 @@ def acres_lines(f, g):
     if g is None:
         return ["Mapped: not run"]
     a = float(g.acres.sum()) if len(g) else 0.0
-    if a < 2.5:
-        return [f"Reported: {f['reported_acres']:.0f} ac    Mapped: NOT DETECTED"]
-    return [f"Reported: {f['reported_acres']:.0f} ac    Mapped: {a:.0f} ac  ({a / f['reported_acres']:.0%} of reported)"]
+    if a < 5 * RES * RES / AC:
+        return [f"Mapped: NOT DETECTED    (reported ~{f['reported_acres']:.0f} ac, approx.)"]
+    fmt = f"{a:.1f}" if a < 10 else f"{a:.0f}"
+    return [f"Mapped: {fmt} ac    (reported ~{f['reported_acres']:.0f} ac, approx.)"]
 
 
 def wrap(s, n=54):
@@ -657,8 +667,8 @@ def main(out=None, title=None):
             vpts.append(v)
 
         fol = kml.newfolder(name=f"{burn_title(f)} ({f['start']})")
-        desc = (f"Burn date: {f['start']}<br>Reported: {f['reported_acres']:.0f} ac<br>"
-                f"Best effort: {stats['mapped_acres']:.0f} ac<br>Confidence: {level}<br>"
+        desc = (f"Burn date: {f['start']}<br>Mapped (best effort): {stats['mapped_acres']:.0f} ac<br>"
+                f"Reported (approx.): ~{f['reported_acres']:.0f} ac<br>Confidence: {level}<br>"
                 + "<br>".join(flags) + f"<br>Recorded point: {f['lat']:.4f}, {f['lon']:.4f}")
         p = fol.newpoint(name=f"{burn_title(f)} (recorded point)", description=desc,
                          coords=[(f["lon"], f["lat"])])
@@ -706,9 +716,9 @@ def main(out=None, title=None):
 
 
 def summary_table(fig, df, rect):
-    cols = ["#", "Site - unit", "Date", "Reported ac", "Landsat ac", "Sentinel-2 ac", "Combined ac",
+    cols = ["#", "Site - unit", "Date", "Approx. ac", "Landsat ac", "Sentinel-2 ac", "Combined ac",
             "Best effort ac", "VIIRS hits", "Confidence"]
-    fmt = lambda v: "-" if v is None or pd.isna(v) else f"{v:.0f}"  # noqa: E731
+    fmt = lambda v: "-" if v is None or pd.isna(v) else (f"{v:.1f}" if 0 < v < 10 else f"{v:.0f}")  # noqa: E731
     cells = []
     for i, r in df.iterrows():
         name = burn_title({"managed_area": str(r.managed_area or "")[:30], "burn_unit": str(r.burn_unit or "")[:16]})
@@ -763,7 +773,7 @@ def summary_pdf(df):
              "  3 Sentinel-2 + Landsat combined, 4 VIIRS active fire,\n"
              "  5 best effort (adds embeddings) with burn severity.\n"
              "- Every map starts from the recorded lat/long (star) and\n  burn date; no burn perimeters were used.\n"
-             "- Mapped acres can differ from reported acres because\n  patchy or light under-canopy fire is hard to see.\n"
+             "- Reported acres are rough estimates (used only to set the\n  search window); confidence reflects imagery timing and\n  signal strength, not agreement with reported acres.\n"
              "- Google Earth: open burns.kmz. GIS: burns.gpkg.\n"
              "- summary.csv has every number in this table and more.\n\n"
              "What would help most: your unit or burn perimeters, and\nnotes on where the maps are right or wrong.")

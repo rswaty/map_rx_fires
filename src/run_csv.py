@@ -101,10 +101,17 @@ def read_burns(path, max_burns=None):
             bad.append(f"row {row}: lat/lon out of range ({lat}, {lon})")
             continue
         if 66 <= lon <= 125 and 24 <= lat <= 50:
-            print(f"WARNING row {row}: longitude {lon} is positive; US longitudes are negative (west)")
+            print(f"::warning title=Row {row} positive longitude::Longitude {lon} is positive; "
+                  "US longitudes are negative (west). Add a minus sign if this burn is in the US.")
         if acres <= 0 or end < start:
             bad.append(f"row {row}: acres must be > 0 and end date on/after the burn date")
             continue
+        if acres < 3:
+            print(f"::warning title=Row {row} very small burn ({acres:g} ac)::Burns under ~3 acres are only a few "
+                  "20 m satellite pixels across and are often hard to distinguish from background noise.")
+        if start.year < 2017:
+            print(f"::warning title=Row {row} pre-2017 burn ({start:%Y-%m-%d})::Sentinel-2 L2A coverage over the US "
+                  "starts around 2017; earlier burns may have no Sentinel-2 imagery.")
         site, unit = text(r, "site"), text(r, "unit")
         key = slug(text(r, "id")) or slug(f"{site} {unit}")[:40] or f"burn_{row}"
         base, n = key, 2
@@ -162,7 +169,11 @@ def main():
             f = fires[k]
             t = time.time()
             if pd.Timestamp(f["end"]) > today:
-                print(f"[{i}/{len(todo)}] {k}: burn date is in the future; skipped")
+                msg = (f"Burn date {f['end']} is in the future (today is {today:%Y-%m-%d}); "
+                       "satellite imagery after the burn does not exist yet.")
+                (out / k).mkdir(parents=True, exist_ok=True)
+                (out / k / "error.txt").write_text(msg)
+                print(f"::error title={k} future burn date::{msg}", flush=True)
                 continue
             try:
                 (out / k / "error.txt").unlink(missing_ok=True)

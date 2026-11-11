@@ -59,21 +59,22 @@ OVERTURE = "s3://overturemaps-us-west-2/release/2026-09-23.1"
 
 # ----------------------------------------------------------------------------- Landsat
 def load_landsat(cat, bb_ll, geobox, t0, t1):
-    items = cat.search(collections=["landsat-c2-l2"], bbox=bb_ll,
-                       datetime=f"{t0:%Y-%m-%d}/{t1:%Y-%m-%d}",
-                       query={"platform": {"in": ["landsat-8", "landsat-9"]},
-                              "eo:cloud_cover": {"lt": 95}}).item_collection()
+    items = P.stac_search(cat, collections=["landsat-c2-l2"], bbox=bb_ll,
+                          datetime=f"{t0:%Y-%m-%d}/{t1:%Y-%m-%d}",
+                          query={"platform": {"in": ["landsat-8", "landsat-9"]},
+                                 "eo:cloud_cover": {"lt": 95}})
     if len(items) == 0:
         return None
-    ds = odc.stac.load(items, bands=["nir08", "swir22", "qa_pixel"], geobox=geobox,
-                       groupby="solar_day", chunks={},
-                       resampling={"qa_pixel": "nearest", "*": "bilinear"}).compute()
+    ds = P.retry(lambda: odc.stac.load(items, bands=["nir08", "swir22", "qa_pixel"], geobox=geobox,
+                                       groupby="solar_day", chunks={},
+                                       resampling={"qa_pixel": "nearest", "*": "bilinear"}).compute())
     ds["time"] = pd.DatetimeIndex(ds.time.values).normalize()
     qa = ds.qa_pixel.values.astype("uint16")
     bit = lambda b: (qa >> b) & 1 == 1  # noqa: E731
     cloud = bit(1) | bit(2) | bit(3)
     near_cloud = np.stack([ndi.binary_dilation(c, iterations=17) for c in cloud])
-    invalid = bit(0) | cloud | bit(5) | (bit(4) & near_cloud)
+    water = np.stack([ndi.binary_dilation(w, iterations=2) for w in bit(7)])
+    invalid = bit(0) | cloud | bit(5) | water | (bit(4) & near_cloud)
     invalid |= (ds.nir08.values == 0) | (ds.swir22.values == 0)
     nir = ds.nir08.astype("float32") * 2.75e-5 - 0.2
     sw2 = ds.swir22.astype("float32") * 2.75e-5 - 0.2
@@ -90,7 +91,16 @@ def load_landsat(cat, bb_ll, geobox, t0, t1):
 # ----------------------------------------------------------------------------- look-alike controls
 def embedding_strata(bb_ll, year, like, epsg):
     pad = 0.002
-    emb = tessera.read_aoi(bbox=(bb_ll[0] - pad, bb_ll[1] - pad, bb_ll[2] + pad, bb_ll[3] + pad), year=year - 1)
+    box = (bb_ll[0] - pad, bb_ll[1] - pad, bb_ll[2] + pad, bb_ll[3] + pad)
+    emb = None
+    for y in (year - 1, year - 2, 2024):
+        try:
+            emb = tessera.read_aoi(bbox=box, year=y)
+            break
+        except Exception:
+            continue
+    if emb is None:
+        raise RuntimeError(f"no TESSERA embeddings found for {year - 1}..2024")
     emb = emb.transpose("band", "y", "x").rio.write_crs(4326).rio.set_spatial_dims(x_dim="x", y_dim="y")
     emb = emb.rio.reproject_match(like.rio.write_crs(epsg), resampling=5)
     X = emb.values.reshape(emb.shape[0], -1).T
@@ -163,8 +173,8 @@ def control_line_features(key, bb_ll):
 
 
 def load_dem(cat, bb_ll, geobox):
-    items = cat.search(collections=["cop-dem-glo-30"], bbox=bb_ll).item_collection()
-    dem = odc.stac.load(items, bands=["data"], geobox=geobox, resampling="bilinear").data
+    items = P.stac_search(cat, collections=["cop-dem-glo-30"], bbox=bb_ll)
+    dem = P.retry(lambda: odc.stac.load(items, bands=["data"], geobox=geobox, resampling="bilinear").data.compute())
     return dem.max("time").values.astype("float64")
 
 
@@ -233,7 +243,7 @@ def run(key):
     out.mkdir(parents=True, exist_ok=True)
     start, end = pd.Timestamp(f["start"]), pd.Timestamp(f["end"])
     epsg, (px, py), bb_utm, bb_ll = P.make_window(f)
-    cat = pystac_client.Client.open(P.STAC, modifier=planetary_computer.sign_inplace)
+    cat = P.open_stac()
     log = {"key": key, "epsg": epsg, "point_xy": [px, py]}
     t0, t1 = start - pd.Timedelta(days=P.PRE_DAYS), end + pd.Timedelta(days=P.POST_DAYS)
 

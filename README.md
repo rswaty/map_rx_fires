@@ -9,8 +9,9 @@ satellite data. No burn perimeters and no software installs are needed.
 4. **VIIRS active-fire detections** (NASA FIRMS hot spots)
 5. **Best effort**: combined, plus satellite embeddings to remove seasonal green-up, with burn severity
 
-Each map shows the recorded point, a 1 km search circle, mapped vs. reported acres and a
-confidence rating. Results are satellite estimates and are not field-verified.
+Each map shows the recorded point, a 1 km search circle, the mapped burned area (alongside
+the approximate reported acres), and a confidence rating based on imagery timing and signal
+strength. Results are satellite estimates and are not field-verified.
 
 ## Make maps (in your browser)
 
@@ -22,7 +23,7 @@ You need to be a collaborator on this repository.
    |---|---|---|---|
    | `lat`, `lon` | yes | `34.5851`, `-92.2494` | decimal degrees; US longitudes are negative |
    | `date` | yes | `2026-01-15` | burn date (`1/15/2026` also works) |
-   | `acres` | yes | `90` | reported acres; sets how far around the point to look |
+   | `acres` | yes | `90` | approximate acres; only used to set how far around the point to look |
    | `end_date` | no | `2026-01-16` | for multi-day burns |
    | `id` | no | `north_unit` | short unique name used for file names |
    | `site`, `unit` | no | `Example Preserve`, `North unit` | map title |
@@ -50,16 +51,34 @@ The zip has a folder per CSV with:
 If a run fails, open it in **Actions** and read the red step: it names the problem
 (e.g. more than 5 rows, a missing column, a date it could not read).
 
-## Good to know
+## Good to know (what satellites can and cannot see)
 
-- **Recent burns:** the methods use up to 45 days of images after the burn. A burn less than
-  45 days old gets a better map if you run it again later.
+- **Burn size (best above ~3 acres):** Sentinel-2 pixels are 20 m × 20 m (~0.1 acre) and the
+  mapper requires at least 5 connected pixels (~0.5 acre) so single noisy pixels are not mapped
+  as fires. Burns under **3 acres**, pile burns, or narrow strip burns are often too small to
+  form a clear multi-pixel scar.
+- **Closed canopy and low-intensity surface burns:** optical satellites see the top of the
+  canopy. A cool understory burn under dense conifer or hardwood canopy often leaves little or
+  no change in Sentinel-2 / Landsat reflectance, even when VIIRS active-fire hot spots (`Map 4`)
+  confirm fire was on the ground.
+- **Snow cover:** if snow covers the unit during the 45 days after the burn (common for winter
+  or early-spring mountain burns), the ground is hidden in the "After" image (shown as flat
+  grey) and the burn scar cannot be mapped until snowmelt.
+- **Recent burns (wait ~2–6 weeks when possible):** the methods use up to 45 days of images
+  after the burn and check that the change persists across consecutive clear passes. A burn run
+  within a couple of weeks of ignition may only have 1–3 post-burn passes (often cloudy or
+  smoky); rerunning it a few weeks later usually gives a much better map.
+- **Approximate acres:** reported acres are only used to size the search window, never as a
+  benchmark. Confidence is rated from how soon a clear image was captured after the burn and
+  how distinct the burn signal is. Neighbouring burns from the same weeks can also be included.
+- **Fill in `id` or `site` and `unit`:** if those columns are blank, burns are named `burn_2`,
+  `burn_3`, etc. after their spreadsheet row number.
 - **VIIRS for the current year** needs a free NASA FIRMS key saved by the repository owner as
   the Actions secret `FIRMS_MAP_KEY` (<https://firms.modaps.eosdis.nasa.gov/api>). Burns from
   past years need no key.
 - **Where it works:** the lower 48 US states, from about 2017 on.
-- Mapped acres often differ from reported acres: light or patchy fire under trees is hard to
-  see from space, and neighbouring burns from the same weeks can be included.
+- **Troubleshooting log:** see [`TROUBLESHOOTING.md`](TROUBLESHOOTING.md) for a record of edge
+  cases found during testing and how they were fixed.
 
 ## Run on your own computer (optional, no burn limit)
 
