@@ -1,0 +1,2 @@
+key,status,managed_area,burn_unit,burn_date,reported_acres,ac_landsat,ac_sentinel,ac_combined,ac_best_effort,viirs_detections,best_effort_confidence,best_effort_flags,first_clear_image_days_after,s2_images,landsat_images,median_dnbr_in_best_effort,best_ac_unburned_very_low,best_ac_low,best_ac_moderate_low,best_ac_moderate_high,best_ac_high,lat,lon,burn_type
+independence_lake,ok,Independence Lake 2024 Rx Burn,,2024-03-06,200.0,0.0,0.5,0.5,0.5,0,low,not detected (< 1 ha mapped),8,28,5,0.235,0.0,0.5,0.0,0.0,0.0,39.452314,-120.290426,

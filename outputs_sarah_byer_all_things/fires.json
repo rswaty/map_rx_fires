@@ -1,0 +1,62 @@
+{
+ "burn_2": {
+  "key": "burn_2",
+  "label": "burn_2",
+  "managed_area": "burn_2",
+  "burn_unit": "",
+  "lat": 39.45496,
+  "lon": -120.295,
+  "start": "2025-10-08",
+  "end": "2025-10-08",
+  "reported_acres": 92.6,
+  "burn_type": "",
+  "ecosystem": "",
+  "source": "sarah_byer_tests_2.csv",
+  "csv_row": 2
+ },
+ "burn_3": {
+  "key": "burn_3",
+  "label": "burn_3",
+  "managed_area": "burn_3",
+  "burn_unit": "",
+  "lat": 39.45927,
+  "lon": -120.282,
+  "start": "2025-10-21",
+  "end": "2025-10-21",
+  "reported_acres": 31.8,
+  "burn_type": "",
+  "ecosystem": "",
+  "source": "sarah_byer_tests_2.csv",
+  "csv_row": 3
+ },
+ "burn_4": {
+  "key": "burn_4",
+  "label": "burn_4",
+  "managed_area": "burn_4",
+  "burn_unit": "",
+  "lat": 39.45206,
+  "lon": -120.293,
+  "start": "2026-10-27",
+  "end": "2026-10-27",
+  "reported_acres": 11.3,
+  "burn_type": "",
+  "ecosystem": "",
+  "source": "sarah_byer_tests_2.csv",
+  "csv_row": 4
+ },
+ "burn_5": {
+  "key": "burn_5",
+  "label": "burn_5",
+  "managed_area": "burn_5",
+  "burn_unit": "",
+  "lat": 39.4555,
+  "lon": -120.281,
+  "start": "2026-10-28",
+  "end": "2026-10-28",
+  "reported_acres": 36.8,
+  "burn_type": "",
+  "ecosystem": "",
+  "source": "sarah_byer_tests_2.csv",
+  "csv_row": 5
+ }
+}

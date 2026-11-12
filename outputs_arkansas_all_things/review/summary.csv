@@ -1,0 +1,7 @@
+key,status,managed_area,burn_unit,burn_date,reported_acres,ac_landsat,ac_sentinel,ac_combined,ac_best_effort,ac_snapped,viirs_detections,best_effort_confidence,best_effort_flags,first_clear_image_days_after,s2_images,landsat_images,mean_tcc_pct,search_radius_m,median_dnbr_in_best_effort,best_ac_unburned_very_low,best_ac_low,best_ac_moderate_low,best_ac_moderate_high,best_ac_high,lat,lon,burn_type
+ar_ar_oak_west_unit,ok,AR Oak NA,West unit,2026-01-06,120.0,83.3,57.9,40.3,99.3,113.6,,high,,1,14,9,83.7,1000.0,0.252,3.8,54.7,39.4,1.5,0.0,33.6542,-93.1754,Broadcast
+ar_lorance_creek_north,ok,Lorance Creek NA-Preserve,North,2026-01-15,90.0,65.6,50.1,44.7,61.2,70.0,,high,,3,10,6,90.2,1000.0,0.299,1.0,23.2,34.3,2.7,0.0,34.5851,-92.2494,Broadcast
+ar_rattlesnake_ridge_maumelle_pin,ok,Rattlesnake Ridge NA,Maumelle Pinnacles unit,2026-03-20,135.0,52.0,21.3,1.7,109.2,145.7,,high,,2,14,10,89.2,1000.0,0.207,15.2,64.0,27.0,3.1,0.0,34.8458,-92.5219,Broadcast
+ar_prairie_ridge_preserve_north_unit,ok,Prairie Ridge Preserve,North unit,2026-05-08,130.0,9.7,18.6,79.8,101.7,105.0,,high,,1,14,12,58.6,1000.0,0.243,22.0,37.3,42.3,0.1,0.0,34.1024,-93.1646,Broadcast
+ar_felsenthal_west_dollar_junct,ok,Felsenthal-West / Huttig Pine Flatwoods,Dollar Junction,2026-05-14,200.0,101.7,146.1,78.9,202.8,220.1,,high,,8,13,8,86.6,1000.0,0.299,14.8,73.3,62.8,42.1,9.8,33.0595,-92.1732,Broadcast
+ar_dunahoo_preserve_entire,ok,Dunahoo Preserve,Entire,2026-06-29,110.0,50.5,76.7,80.8,116.7,114.2,,high,,2,15,7,81.3,1000.0,0.235,11.0,60.2,39.5,5.6,0.4,34.5098,-92.4807,Broadcast

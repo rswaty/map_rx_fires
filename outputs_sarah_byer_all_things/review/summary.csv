@@ -1,0 +1,5 @@
+key,status,managed_area,burn_unit,burn_date,reported_acres,ac_landsat,ac_sentinel,ac_combined,ac_best_effort,ac_snapped,viirs_detections,best_effort_confidence,best_effort_flags,first_clear_image_days_after,s2_images,landsat_images,mean_tcc_pct,search_radius_m,median_dnbr_in_best_effort,best_ac_unburned_very_low,best_ac_low,best_ac_moderate_low,best_ac_moderate_high,best_ac_high,lat,lon,burn_type
+burn_2,ok,burn_2,,2025-10-08,92.6,2.8,1.2,1.3,8.1,6.2,27,high,,2,39,7,41.1,1000.0,0.175,1.0,5.6,1.5,0.0,0.0,39.45496,-120.295,
+burn_3,ok,burn_3,,2025-10-21,31.8,2.0,1.1,2.0,9.1,8.5,11,medium,,3,38,7,38.9,607.0,0.149,1.8,5.7,0.9,0.5,0.2,39.45927,-120.282,
+burn_4,ok,burn_4,,2026-10-27,11.3,0.0,0.0,0.7,23.7,26.4,17,medium,weak burn signal (median dNBR 0.11); burn is 16 days old (full post-burn window is 45 days),3,27,4,43.5,362.0,0.106,10.1,13.3,0.3,0.0,0.0,39.45206,-120.293,
+burn_5,ok,burn_5,,2026-10-28,36.8,0.0,0.9,0.5,21.6,32.7,17,medium,burn is 15 days old (full post-burn window is 45 days),2,27,4,36.7,653.0,0.135,5.5,13.6,2.0,0.5,0.0,39.4555,-120.281,

@@ -1,0 +1,5 @@
+key,status,managed_area,burn_unit,burn_date,reported_acres,ac_landsat,ac_sentinel,ac_combined,ac_best_effort,viirs_detections,best_effort_confidence,best_effort_flags,first_clear_image_days_after,s2_images,landsat_images,median_dnbr_in_best_effort,best_ac_unburned_very_low,best_ac_low,best_ac_moderate_low,best_ac_moderate_high,best_ac_high,lat,lon,burn_type
+burn_2,ok,burn_2,,2025-10-08,92.6,62.6,0.8,0.0,0.0,27.0,low,not detected (< 1 ha mapped),2.0,39.0,7.0,,0.0,0.0,0.0,0.0,0.0,39.45496,-120.295,
+burn_3,no maps: STACError: HREF: 'https://planetarycomputer.microsoft.com/api/stac/v1/' does not resolve to a STAC object,burn_3,,2025-10-21,31.8,,,,,,,,,,,,,,,,,39.45927,-120.282,
+burn_4,ok,burn_4,,2026-10-27,11.3,0.0,1.5,1.5,2.2,17.0,low,not detected (< 1 ha mapped),3.0,26.0,4.0,0.243,0.0,1.2,0.0,0.5,0.5,39.45206,-120.293,
+burn_5,ok,burn_5,,2026-10-28,36.8,0.0,11.7,0.0,1.8,17.0,low,not detected (< 1 ha mapped),2.0,26.0,4.0,0.189,0.0,1.3,0.5,0.0,0.0,39.4555,-120.281,

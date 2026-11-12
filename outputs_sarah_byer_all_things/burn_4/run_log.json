@@ -1,0 +1,26 @@
+{
+  "key": "burn_4",
+  "epsg": 32610,
+  "point_xy": [
+    732921.8578558277,
+    4370441.9084995575
+  ],
+  "s2_looks": 27,
+  "landsat_looks": 4,
+  "search_radius_m": 362.0,
+  "tcc_source": "usfs_fia_nlcd_tcc_2021",
+  "mean_tcc_pct": 43.5,
+  "first_clear_after_days_merged": 3,
+  "first_clear_after_days_s2": 3,
+  "strata": "tessera",
+  "control_line_features": 91,
+  "control_line_source": "s3://overturemaps-us-west-2/release/2026-09-23.1",
+  "candidate_units": 1141,
+  "mapped_ha": {
+    "std": 106.52,
+    "v1": 0.0,
+    "v2": 9.6,
+    "v1_snap": 0.0,
+    "v2_snap": 10.68
+  }
+}

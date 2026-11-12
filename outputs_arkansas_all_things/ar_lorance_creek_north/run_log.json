@@ -1,0 +1,26 @@
+{
+  "key": "ar_lorance_creek_north",
+  "epsg": 32615,
+  "point_xy": [
+    568838.12573582,
+    3827289.7601413573
+  ],
+  "s2_looks": 10,
+  "landsat_looks": 6,
+  "search_radius_m": 1000.0,
+  "tcc_source": "usfs_fia_nlcd_tcc_2021",
+  "mean_tcc_pct": 90.2,
+  "first_clear_after_days_merged": 3,
+  "first_clear_after_days_s2": 7,
+  "strata": "tessera",
+  "control_line_features": 230,
+  "control_line_source": "s3://overturemaps-us-west-2/release/2026-09-23.1",
+  "candidate_units": 778,
+  "mapped_ha": {
+    "std": 66.2,
+    "v1": 20.28,
+    "v2": 24.76,
+    "v1_snap": 26.4,
+    "v2_snap": 28.32
+  }
+}

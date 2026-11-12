@@ -1,0 +1,16 @@
+{
+ "independence_lake": {
+  "key": "independence_lake",
+  "label": "Independence Lake 2024 Rx Burn",
+  "managed_area": "Independence Lake 2024 Rx Burn",
+  "burn_unit": "",
+  "lat": 39.452314,
+  "lon": -120.290426,
+  "start": "2024-03-06",
+  "end": "2024-03-06",
+  "reported_acres": 200.0,
+  "burn_type": "",
+  "source": "from_sarah_byer.csv",
+  "csv_row": 2
+ }
+}
