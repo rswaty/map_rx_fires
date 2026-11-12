@@ -48,6 +48,7 @@ ALIASES = {
     "end_date": ["end_date", "end", "end date"],
     "acres": ["acres", "reported_acres", "acres burned", "acres_burned", "area_acres"],
     "burn_type": ["burn_type", "type of burn", "type"],
+    "ecosystem": ["ecosystem", "cover", "veg_type", "vegetation", "habitat"],
 }
 POST_DAYS = 45  # days of imagery after the burn that the methods look at
 
@@ -120,7 +121,7 @@ def read_burns(path, max_burns=None):
         fires[key] = {"key": key, "label": " - ".join(x for x in (site, unit) if x) or key,
                       "managed_area": site or key, "burn_unit": unit, "lat": lat, "lon": lon,
                       "start": f"{start:%Y-%m-%d}", "end": f"{end:%Y-%m-%d}", "reported_acres": acres,
-                      "burn_type": text(r, "burn_type"),
+                      "burn_type": text(r, "burn_type"), "ecosystem": text(r, "ecosystem"),
                       "source": Path(path).name, "csv_row": row}
     for b in bad:
         print("SKIPPED", b)
@@ -161,9 +162,12 @@ def main():
 
     V.REF, V.OUT, V.CACHE = out, out, out / "cache"
     methods.set_output(out)
+    maps.OUT = out
     today = pd.Timestamp.now().normalize()
     if not a.maps_only:
         todo = [k for k in fires if not (out / k / "methods.nc").exists()]
+        if todo:
+            maps.viirs_archive({k: fires[k] for k in todo})
         print(f"{len(fires)} burns, {len(todo)} to process (a few minutes each)", flush=True)
         for i, k in enumerate(todo, 1):
             f = fires[k]
@@ -177,6 +181,7 @@ def main():
                 continue
             try:
                 (out / k / "error.txt").unlink(missing_ok=True)
+                maps.viirs(k, f)
                 if not (out / k / "run_log.json").exists():
                     V.run(k)
                 methods.run(k)

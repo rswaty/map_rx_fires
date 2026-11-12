@@ -81,6 +81,13 @@ def utm_epsg(lat, lon):
                           "south": lat < 0}).to_epsg()
 
 
+def search_radius_m(f):
+    """Search radius around the recorded point (m), scaled to the approximate reported acres
+    (clipped to 350..1000 m so a 10-35 ac burn does not pull in unrelated hillsides 1 km away)."""
+    r_unit = np.sqrt(max(float(f.get("reported_acres", 50.0)), 1.0) * 4046.86 / np.pi)
+    return float(np.clip(3.0 * r_unit, 350.0, 1000.0))
+
+
 def make_window(f):
     """Square search window scaled to reported size (min 5 km across)."""
     epsg = utm_epsg(f["lat"], f["lon"])
@@ -94,6 +101,22 @@ def make_window(f):
                                  [bb_utm[1], bb_utm[1], bb_utm[3], bb_utm[3]])
     bb_ll = (min(lons), min(lats), max(lons), max(lats))
     return epsg, (x, y), bb_utm, bb_ll
+
+
+def subpixel_char_fraction(b04, b8a, b11, b12):
+    """Linear spectral unmixing of each pixel into Green Vegetation (GV), Senescent / Dry
+    Litter / Soil (NPV), and Black Carbon / Char (Char) fractions (0..1).
+    Unlike dNBR, autumn senescence / leaf-off increases NPV (bright Red + bright SWIR1),
+    whereas combustion increases Char (dark across Vis/NIR/SWIR1 with elevated SWIR2/SWIR1)."""
+    # Endmembers [B04 (Red), B8A (NIR), B11 (SWIR1), B12 (SWIR2)]:
+    #   GV   = [0.04, 0.36, 0.16, 0.07]  (healthy green foliage)
+    #   NPV  = [0.16, 0.26, 0.34, 0.22]  (dry grass / senescent leaves / soil)
+    #   Char = [0.05, 0.07, 0.08, 0.09]  (char / ash: low albedo, flat/rising SWIR2)
+    albedo = (b04 + b8a + b11 + b12) / 4.0
+    dark = np.clip((0.18 - albedo) / 0.12, 0.0, 1.0)
+    swir_char = np.clip((b12 - 0.55 * b11) / (b12 + b11 + 1e-4) + 0.25, 0.0, 1.0)
+    not_npv = np.clip(1.0 - np.clip((b11 - b8a - 0.02) / 0.15, 0.0, 1.0), 0.0, 1.0)
+    return (dark * swir_char * not_npv).where(b8a.notnull() & b11.notnull() & b12.notnull())
 
 
 # ----------------------------------------------------------------------------- S2
@@ -117,10 +140,12 @@ def load_s2(cat, f, epsg, bb_ll, t0, t1):
     if not items:
         raise RuntimeError(f"No Sentinel-2 scenes found between {t0:%Y-%m-%d} and {t1:%Y-%m-%d} "
                            f"at ({f['lat']:.4f}, {f['lon']:.4f}); check the coordinates and burn date.")
-    baseline = {}
+    baseline, zenith, azimuth = {}, {}, {}
     for it in items:
         d = pd.Timestamp(it.datetime).tz_localize(None).normalize()
         baseline[d] = float(it.properties.get("s2:processing_baseline", "0") or 0)
+        zenith[d] = float(it.properties.get("s2:mean_solar_zenith", 40.0) or 40.0)
+        azimuth[d] = float(it.properties.get("s2:mean_solar_azimuth", 160.0) or 160.0)
     ds = retry(lambda: odc.stac.load(items, bands=["B02", "B03", "B04", "B08", "B8A", "B11", "B12", "SCL"],
                                      crs=f"EPSG:{epsg}", resolution=RES, bbox=bb_ll,
                                      groupby="solar_day", chunks={},
@@ -145,7 +170,13 @@ def load_s2(cat, f, epsg, bb_ll, t0, t1):
         refl[b] = v.where(~invalid & (ds[b] > 0))
     s2 = xr.Dataset(refl)
     s2["NBR"] = (s2.B8A - s2.B12) / (s2.B8A + s2.B12)
+    s2["NBR2"] = (s2.B11 - s2.B12) / (s2.B11 + s2.B12)
     s2["NDVI"] = (s2.B08 - s2.B04) / (s2.B08 + s2.B04)
+    s2["CHAR"] = subpixel_char_fraction(s2.B04, s2.B8A, s2.B11, s2.B12)
+    s2["solar_zenith"] = xr.DataArray([zenith.get(t, 40.0) for t in pd.DatetimeIndex(ds.time.values)],
+                                      dims="time", coords={"time": ds.time})
+    s2["solar_azimuth"] = xr.DataArray([azimuth.get(t, 160.0) for t in pd.DatetimeIndex(ds.time.values)],
+                                       dims="time", coords={"time": ds.time})
     # Snow is already masked per pixel. Do not throw the whole date away because
     # the window is mostly snow; only drop dates that are cloud/nodata, or that
     # have almost no clear ground left.
@@ -175,6 +206,23 @@ def edge_composite(da, times, mask_time, n=3, from_end=False):
     with np.errstate(all="ignore"):
         out = np.nanmedian(arr, axis=0)
     return xr.DataArray(out, dims=("y", "x"), coords={"y": da.y, "x": da.x}), sub.sizes["time"]
+
+
+def post_scorch_composite(da, times, mask_time, n=3):
+    """Post-burn NBR composite that captures both immediate char and delayed crown scorch /
+    needle browning (which often peaks 2-6 weeks after a forest burn). When at least 5 post-burn
+    passes exist (covering >= 2-3 weeks), takes the elementwise minimum of the earliest-n median
+    and the lowest-3 median across the post-burn window; for very recent burns (< 5 post-burn
+    passes) uses the standard earliest-n median so 1-2 noisy early-winter passes cannot dominate."""
+    early, k = edge_composite(da, times, mask_time, n=n, from_end=False)
+    if k < 5:
+        return early, k
+    arr = da.sel(time=mask_time).values
+    with np.errstate(all="ignore"):
+        s = np.sort(arr, axis=0)  # NaNs sorted to the end
+        low3 = np.nanmedian(s[:3], axis=0)
+        out = np.fmin(early.values, low3)
+    return xr.DataArray(out, dims=("y", "x"), coords={"y": da.y, "x": da.x}), k
 
 
 def break_dates(nbr):
@@ -293,8 +341,10 @@ def robust_z(da, mask=None):
 
 
 def clean(mask):
-    m = ndi.binary_opening(mask, iterations=1)
-    lab, n = ndi.label(m)
+    """Remove isolated noise specks (< MIN_PATCH_PX) and fill small gaps without erasing
+    1-2 pixel (20-40 m) canopy-gap detections before connected patches are measured."""
+    m = mask.astype(bool)
+    lab, n = ndi.label(m, structure= np.ones((3, 3), int))
     if n:
         sizes = ndi.sum(m, lab, range(1, n + 1))
         m = np.isin(lab, np.where(sizes >= MIN_PATCH_PX)[0] + 1)
@@ -305,6 +355,36 @@ def clean(mask):
         sizes = ndi.sum(holes, lab, range(1, n + 1))
         m = m | np.isin(lab, np.where(sizes <= 50)[0] + 1)  # fill holes <= 2 ha
     return m
+
+
+def seed_and_grow(z, dnbr, date_ok, viirs_mask=None, stand_aff=None, stand_edges=None, dchar=None,
+                  z_seed=1.5, z_grow=1.2, dnbr_min=0.08, max_grow_px=2):
+    """Two-stage hysteresis thresholding:
+    1. Core burn seeds (z >= z_seed & date_ok & dnbr >= dnbr_min, or z >= z_grow inside a VIIRS
+       active-fire footprint) grow up to max_grow_px (40 m) into adjacent date-matched pixels.
+    2. When pre-fire TESSERA embedding stand-affinity (stand_aff) is provided, seeds also grow
+       within the same contiguous vegetation stand (stand_aff >= 0.72, stopped by stand_edges)
+       into canopy-attenuated pixels (z >= 0.75, dnbr >= 0.05) that darkened on the burn date
+       or show a sub-pixel char increase."""
+    zv = np.nan_to_num(z, nan=-9.0)
+    dv = np.nan_to_num(dnbr, nan=0.0)
+    cv = np.nan_to_num(dchar, nan=0.0) if dchar is not None else np.zeros_like(zv)
+    seeds = (zv >= z_seed) & date_ok & (dv >= dnbr_min)
+    if viirs_mask is not None and np.any(viirs_mask):
+        seeds |= viirs_mask & (zv >= z_grow) & date_ok & (dv >= dnbr_min)
+    if stand_aff is not None and not np.any(seeds):
+        # In dense closed-canopy stands where no single pixel hit z >= 1.5, allow high-affinity
+        # stand pixels with both date-matched drop and char increase to act as seeds
+        seeds |= (stand_aff >= 0.80) & date_ok & (zv >= 1.1) & (dv >= 0.06) & (cv >= 0.01)
+    if not np.any(seeds):
+        return np.zeros_like(seeds, bool)
+    cand = (zv >= z_grow) & date_ok & (dv >= dnbr_min) & ndi.binary_dilation(seeds, iterations=max_grow_px)
+    grown = ndi.binary_propagation(seeds, mask=cand, structure=np.ones((3, 3), int))
+    if stand_aff is not None:
+        barrier = np.zeros_like(seeds, bool) if stand_edges is None else stand_edges.astype(bool)
+        same_stand = (stand_aff >= 0.72) & (~barrier) & (zv >= 0.75) & (dv >= 0.05) & (date_ok | (cv >= 0.015))
+        grown |= ndi.binary_propagation(seeds, mask=same_stand | seeds, structure=np.ones((3, 3), int))
+    return grown
 
 
 def point_guided(mask, pt_rc, radius_px):

@@ -67,9 +67,9 @@ def load_landsat(cat, bb_ll, geobox, t0, t1):
     return out.sel(time=keep)
 
 
-def point_date_rule(nbr, tm, start, end, pt_rc):
+def point_date_rule(nbr, tm, start, end, pt_rc, viirs_mask=None, near_pt=None, r_search=P.POINT_RADIUS_M):
     pre, _ = P.edge_composite(nbr, tm, tm < start, from_end=True)
-    post, _ = P.edge_composite(nbr, tm, tm > end)
+    post, _ = P.post_scorch_composite(nbr, tm, tm > end)
     dnbr = pre - post
     _, lo, hi = P.break_dates(nbr)
     s_day = start.to_datetime64().astype("datetime64[D]").astype("int64")
@@ -78,7 +78,10 @@ def point_date_rule(nbr, tm, start, end, pt_rc):
     if not np.isfinite(dnbr.values).any():
         return dnbr.values, np.zeros(dnbr.shape, bool)
     z = P.robust_z(dnbr)[0].values
-    rule = P.point_guided(P.clean((np.nan_to_num(z) >= 1.5) & date_ok), pt_rc, P.POINT_RADIUS_M / P.RES)
+    raw = P.seed_and_grow(z, dnbr.values, date_ok, viirs_mask=viirs_mask)
+    if near_pt is not None:
+        raw = raw & near_pt
+    rule = P.point_guided(P.clean(raw), pt_rc, r_search / P.RES)
     return dnbr.values, rule
 
 
@@ -103,13 +106,17 @@ def run(key):
     transform = grid.rio.transform()
     col, row = ~transform * (px, py)
     pt_rc = (int(row), int(col))
+    r_search = P.search_radius_m(f)
+    yy, xx = np.meshgrid(grid.y.values, grid.x.values, indexing="ij")
+    near_pt = np.hypot(xx - px, yy - py) <= r_search
+    vmask = V.viirs_seed_mask(key, f, grid.dnbr_s2, transform, epsg)
     ds = xr.Dataset(coords={"y": grid.y, "x": grid.x})
     info = {"epsg": epsg}
 
     if ls is not None and ls.sizes["time"]:
         ls = ls.assign_coords(x=grid.x, y=grid.y)
         tl = pd.DatetimeIndex(ls.time.values)
-        dn, rule = point_date_rule(ls.NBR, tl, start, end, pt_rc)
+        dn, rule = point_date_rule(ls.NBR, tl, start, end, pt_rc, viirs_mask=vmask, near_pt=near_pt, r_search=r_search)
         for b in ["B12", "B8A", "B04"]:
             ds[f"ls_pre_{b}"] = P.edge_composite(ls[b], tl, tl < start, from_end=True)[0]
             ds[f"ls_post_{b}"] = P.edge_composite(ls[b], tl, tl > end)[0]
@@ -124,10 +131,9 @@ def run(key):
     nbr = s2.NBR if ls is None else xr.concat([s2.NBR, ls.NBR], "time").sortby("time")
     tm2 = pd.DatetimeIndex(nbr.time.values)
     area_m2 = f["reported_acres"] * 4046.86
-    yy, xx = np.meshgrid(grid.y.values, grid.x.values, indexing="ij")
     pool = np.hypot(xx - px, yy - py) > P.POINT_RADIUS_M + 1.5 * np.sqrt(area_m2 / np.pi)
     adj = V.adjust_series(nbr, np.zeros(pool.shape, int), pool)
-    dn, rule = point_date_rule(adj, tm2, start, end, pt_rc)
+    dn, rule = point_date_rule(adj, tm2, start, end, pt_rc, viirs_mask=vmask, near_pt=near_pt, r_search=r_search)
     ds["dnbr_combo"] = (("y", "x"), dn)
     ds["rule_combo"] = (("y", "x"), rule.astype("uint8"))
     s2t = pd.DatetimeIndex(s2.time.values)

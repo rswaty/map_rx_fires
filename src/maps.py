@@ -72,9 +72,12 @@ METHODS = {  # key: (layer, short name, how it works)
                  "Both satellites in one time series (more clear looks). Each image is compared with land "
                  "far from the point, so seasonal change cancels out. No embeddings."),
     "best": ("rule_v2", "Best effort (Sentinel-2 + Landsat + embeddings)",
-             "As the combined method, but each pixel is compared only with look-alike land (same "
-             "vegetation type, from TESSERA satellite embeddings of the year before), which removes "
-             "more green-up / dry-down noise."),
+             "As the combined method, plus TESSERA 128-D pre-fire embeddings for look-alike control "
+             "matching and stand-affinity growth, sub-pixel char unmixing, DEM shadow correction, "
+             "Landsat thermal warming, and USFS/FIA canopy scaling."),
+    "snapped": ("rule_v2_snap", "Best effort snapped to control lines",
+                "Best effort snapped to roads, trails, streams (Overture Maps), ridgelines (30 m DEM), "
+                "and TESSERA vegetation-stand boundaries."),
 }
 TOPO = ctx.providers.USGS.USTopo  # OSM's tile servers block scripted downloads
 FIRMS_API = "https://firms.modaps.eosdis.nasa.gov/api/area/csv/{key}/{src}/{bbox}/{days}/{date}"
@@ -248,15 +251,21 @@ def utm_of(f):
     return gpd.GeoSeries([Point(f["lon"], f["lat"])], crs=4326).estimate_utm_crs()
 
 
+def search_radius_m(f):
+    r_unit = np.sqrt(max(float(f.get("reported_acres", 50.0)), 1.0) * AC / np.pi)
+    return float(np.clip(3.0 * r_unit, 350.0, 1000.0))
+
+
 def extent_ll(f, outs, pts):
     epsg = utm_of(f)
+    r = search_radius_m(f)
     p = gpd.GeoSeries([Point(f["lon"], f["lat"])], crs=4326).to_crs(epsg).iloc[0]
-    geoms = [p.buffer(1100)]
+    geoms = [p.buffer(r * 1.15)]
     for g in outs.values():
         if g is not None and len(g):
-            geoms.append(g.to_crs(epsg).geometry.iloc[0].intersection(p.buffer(2500)))
+            geoms.append(g.to_crs(epsg).geometry.iloc[0].intersection(p.buffer(max(r * 1.6, 1200))))
     if pts is not None and len(pts):
-        geoms += list(pts.to_crs(epsg).buffer(190).intersection(p.buffer(2500)))
+        geoms += list(pts.to_crs(epsg).buffer(190).intersection(p.buffer(max(r * 1.6, 1200))))
     b = gpd.GeoSeries(geoms, crs=epsg).union_all().bounds
     cx, cy = (b[0] + b[2]) / 2, (b[1] + b[3]) / 2
     half = max(b[2] - b[0], b[3] - b[1]) / 2 * 1.12
@@ -301,13 +310,13 @@ def draw_point(ax, f, label=True):
 
 def search_circle(f):
     pt = gpd.GeoSeries([Point(f["lon"], f["lat"])], crs=4326)
-    return pt.to_crs(pt.estimate_utm_crs()).buffer(1000).to_crs(4326)
+    return pt.to_crs(pt.estimate_utm_crs()).buffer(search_radius_m(f)).to_crs(4326)
 
 
-def draw_outline(ax, g, colour="k", halo="white"):
+def draw_outline(ax, g, colour="k", halo="white", lw=1.4, ls="-"):
     if g is not None and len(g):
-        g.boundary.plot(ax=ax, color=halo, lw=3.2, zorder=6)
-        g.boundary.plot(ax=ax, color=colour, lw=1.4, zorder=7)
+        g.boundary.plot(ax=ax, color=halo, lw=lw + 1.8, zorder=6)
+        g.boundary.plot(ax=ax, color=colour, lw=lw, ls=ls, zorder=7)
 
 
 def states_around(lons, lats):
@@ -385,7 +394,7 @@ def wrap(s, n=54):
     return textwrap.wrap(s, n)
 
 
-STD_HANDLES = [Line2D([], [], color="#444", lw=1, ls="--", label="1 km search radius around point"),
+STD_HANDLES = [Line2D([], [], color="#444", lw=1, ls="--", label="Search radius around point (350-1000 m)"),
                Line2D([], [], marker="*", ls="", ms=13, mfc="#00e5ff", mec="k", label="Recorded lat/long")]
 
 
@@ -546,19 +555,41 @@ def page_viirs(f, pts, note, ext):
     return fig
 
 
-def page_best(f, log, outs, sev, stats, conf, ext):
+def page_best(f, log, outs, sev, stats, conf, ext, key=None):
     level, ratio, gap, flags = conf
     g = outs["best"]
+    gs = outs.get("snapped")
+    lines_file = OUT / "cache" / f"lines_{key}.geojson" if key else None
+    clines = gpd.read_file(lines_file) if lines_file and lines_file.exists() else None
 
     def draw(ax):
+        if clines is not None and len(clines):
+            clines.to_crs(4326).plot(ax=ax, color="#555555", lw=0.6, ls=":", alpha=0.55, zorder=2)
         if len(sev):
             sev.plot(ax=ax, color=[SEV[c][2] for c in sev.cls], alpha=0.6, lw=0, zorder=3)
+        if gs is not None and len(gs):
+            draw_outline(ax, gs, colour="#0072b2", halo="white", lw=1.4, ls="--")
         draw_outline(ax, g)
 
     handles = [mpatches.Patch(fc=c, ec="k", lw=0.4, label=f"{lab}: {stats['sev_acres'][lab]:.0f} ac")
                for _, lab, c in SEV]
-    handles += [Line2D([], [], color="k", lw=2, label="Mapped burn perimeter")] + STD_HANDLES
+    handles += [Line2D([], [], color="k", lw=2, label="Mapped burn perimeter (best effort)")]
+    if gs is not None and len(gs):
+        sa = float(gs.acres.sum())
+        handles += [Line2D([], [], color="#0072b2", lw=1.5, ls="--",
+                           label=f"Snapped to roads/trails/ridges ({sa:.1f} ac)")]
+    if clines is not None and len(clines):
+        handles += [Line2D([], [], color="#555555", lw=0.8, ls=":", label="Roads / trails / streams (Overture)")]
+    handles += STD_HANDLES
+    tcc_pct = log.get("mean_tcc_pct")
+    eco = f.get("ecosystem") or (
+        "closed forest" if tcc_pct is not None and tcc_pct >= 55 else
+        "woodland / savanna" if tcc_pct is not None and tcc_pct >= 15 else
+        "open / grassland" if tcc_pct is not None else ""
+    )
     lines = acres_lines(f, g)
+    if tcc_pct is not None:
+        lines += [f"Canopy cover (USFS/FIA TCC): {tcc_pct:.0f}% ({eco})"]
     lines += [f"Images: {log.get('s2_looks')} Sentinel-2 + {log.get('landsat_looks')} Landsat",
               (f"First clear image after burn: {gap} day{'s' if gap != 1 else ''}" if gap is not None
                else "No clear image after burn"), f"Confidence: {level.upper()}"]
@@ -588,7 +619,7 @@ def hex_kml(c, alpha):
     return f"{alpha:02x}{c[4:6]}{c[2:4]}{c[0:2]}"
 
 
-KML_COLOURS = {"landsat": "#2ca02c", "sentinel": "#ff00ff", "combined": "#fd8d3c", "best": "#ffff00"}
+KML_COLOURS = {"landsat": "#2ca02c", "sentinel": "#ff00ff", "combined": "#fd8d3c", "best": "#ffff00", "snapped": "#0072b2"}
 PAGES = ["1_landsat", "2_sentinel", "3_combined", "4_viirs", "5_best_effort"]
 
 
@@ -626,7 +657,7 @@ def main(out=None, title=None):
                 page_before_after(f, log, ds, info, outs, ext, 2, "sentinel"),
                 page_combined(f, log, info, outs, ext),
                 page_viirs(f, vp, vnote, ext),
-                page_best(f, log, outs, sev, stats, conf, ext)]
+                page_best(f, log, outs, sev, stats, conf, ext, key=key)]
         with PdfPages(REV / f"{key}.pdf") as pdf:
             for name, fig in zip(PAGES, figs):
                 fig.savefig(REV / f"{key}_{name}.png", dpi=170)
@@ -638,11 +669,13 @@ def main(out=None, title=None):
                     "burn_unit": f.get("burn_unit", ""), "burn_date": f["start"],
                     "reported_acres": f["reported_acres"],
                     "ac_landsat": ac["landsat"], "ac_sentinel": ac["sentinel"], "ac_combined": ac["combined"],
-                    "ac_best_effort": ac["best"],
+                    "ac_best_effort": ac["best"], "ac_snapped": ac.get("snapped"),
                     "viirs_detections": None if vp is None else len(vp),
                     "best_effort_confidence": level, "best_effort_flags": "; ".join(flags),
                     "first_clear_image_days_after": gap, "s2_images": log.get("s2_looks"),
                     "landsat_images": log.get("landsat_looks"),
+                    "mean_tcc_pct": log.get("mean_tcc_pct"),
+                    "search_radius_m": log.get("search_radius_m"),
                     "median_dnbr_in_best_effort": None if stats["dnbr_median"] is None else round(stats["dnbr_median"], 3),
                     **{f"best_ac_{lab.split(' (')[0].lower().replace(' / ', '_').replace('-', '_').replace(' ', '_')}":
                        round(a, 1) for lab, a in stats["sev_acres"].items()},
@@ -678,8 +711,8 @@ def main(out=None, title=None):
             for _, r in sev.iterrows():
                 kml_poly(fs, r.geometry, r.severity, f"{r.acres:.1f} ac", hex_kml(SEV[r.cls][2], 0xa0),
                          line="00000000", width=0)
-        for k in ["best", "combined", "sentinel", "landsat"]:
-            g = outs[k]
+        for k in ["best", "snapped", "combined", "sentinel", "landsat"]:
+            g = outs.get(k)
             if g is None or not len(g):
                 continue
             vis = k == "best"
@@ -700,7 +733,7 @@ def main(out=None, title=None):
     if pts_rec:
         gpd.GeoDataFrame(pts_rec, crs=4326).to_file(gpkg, layer="recorded_points", driver="GPKG")
     names = {"landsat": "landsat_only", "sentinel": "sentinel2_only", "combined": "combined_s2_landsat",
-             "best": "best_effort"}
+             "best": "best_effort", "snapped": "best_effort_snapped"}
     for k, parts in layers.items():
         if parts:
             gpd.GeoDataFrame(pd.concat(parts, ignore_index=True), crs=4326).to_file(gpkg, layer=names[k], driver="GPKG")
